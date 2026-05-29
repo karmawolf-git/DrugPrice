@@ -35,12 +35,12 @@ export const drugs = [
     ],
     prices: [
       { spec: '10mg', insurancePrice: 638, unit: '정', reimbursementRate: '80%' },
-      { spec: '20mg', insurancePrice: 607, unit: '정', reimbursementRate: '80%' },
+      { spec: '20mg', insurancePrice: 688, unit: '정', reimbursementRate: '80%' },
       { spec: '40mg', insurancePrice: 1330, unit: '정', reimbursementRate: '80%' },
       { spec: '80mg', insurancePrice: 1511, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
-      { name: '크레스토정 10mg', manufacturer: '한국아스트라제네카(주)', ingredient: '로수바스타틴 칼슘', insurancePrice: 487, class: '스타틴(로수바스타틴)' },
+      { name: '크레스토정 10mg', manufacturer: '한국아스트라제네카(주)', ingredient: '로수바스타틴 칼슘', insurancePrice: 602, class: '스타틴(로수바스타틴)' },
       { name: '크레스토정 20mg', manufacturer: '한국아스트라제네카(주)', ingredient: '로수바스타틴 칼슘', insurancePrice: 823, class: '스타틴(로수바스타틴)' },
       { name: '바이토린정 10/20mg', manufacturer: '한국MSD(주)', ingredient: '에제티미브/심바스타틴', insurancePrice: 892, class: '스타틴+콜레스테롤흡수억제제' },
       { name: '아토젯정 10/10mg', manufacturer: '한국MSD(주)', ingredient: '에제티미브/아토르바스타틴', insurancePrice: 918, class: '스타틴+콜레스테롤흡수억제제' },
