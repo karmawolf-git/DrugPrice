@@ -29,7 +29,7 @@ function PriceBar({ value, max, color }) {
 }
 
 export default function PriceSection({ drug }) {
-  const maxPrice = Math.max(...drug.prices.map(p => p.nonInsurancePrice))
+  const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice))
 
   return (
     <div style={{
@@ -66,7 +66,6 @@ export default function PriceSection({ drug }) {
             <tr style={{ background: drug.lightColor }}>
               <Th>규격</Th>
               <Th>보험급여가</Th>
-              <Th>비급여가 (참고)</Th>
               <Th>환자 본인부담</Th>
               <Th>급여율</Th>
               <Th style={{ minWidth: 160 }}>가격 비율</Th>
@@ -98,10 +97,6 @@ export default function PriceSection({ drug }) {
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>/{p.unit}</span>
                   </Td>
                   <Td>
-                    <span style={{ color: 'var(--text-secondary)' }}>{fmt(p.nonInsurancePrice)}</span>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>/{p.unit}</span>
-                  </Td>
-                  <Td>
                     <span style={{ color: '#059669', fontWeight: 600 }}>{fmt(copay)}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>(20%)</span>
                   </Td>
@@ -116,7 +111,7 @@ export default function PriceSection({ drug }) {
                     }}>{p.reimbursementRate}</span>
                   </Td>
                   <Td style={{ minWidth: 160 }}>
-                    <PriceBar value={p.nonInsurancePrice} max={maxPrice} color={drug.color} />
+                    <PriceBar value={p.insurancePrice} max={maxPrice} color={drug.color} />
                   </Td>
                 </tr>
               )

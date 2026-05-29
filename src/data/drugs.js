@@ -34,10 +34,10 @@ export const drugs = [
       '혈당 상승 및 신규 당뇨병 발생 위험 증가 보고',
     ],
     prices: [
-      { spec: '10mg', insurancePrice: 638, nonInsurancePrice: 912, unit: '정', reimbursementRate: '80%' },
-      { spec: '20mg', insurancePrice: 607, nonInsurancePrice: 870, unit: '정', reimbursementRate: '80%' },
-      { spec: '40mg', insurancePrice: 971, nonInsurancePrice: 1390, unit: '정', reimbursementRate: '80%' },
-      { spec: '80mg', insurancePrice: 1489, nonInsurancePrice: 2130, unit: '정', reimbursementRate: '80%' },
+      { spec: '10mg', insurancePrice: 638, unit: '정', reimbursementRate: '80%' },
+      { spec: '20mg', insurancePrice: 607, unit: '정', reimbursementRate: '80%' },
+      { spec: '40mg', insurancePrice: 1330, unit: '정', reimbursementRate: '80%' },
+      { spec: '80mg', insurancePrice: 1511, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
       { name: '크레스토정 10mg', manufacturer: '한국아스트라제네카(주)', ingredient: '로수바스타틴 칼슘', insurancePrice: 487, class: '스타틴(로수바스타틴)' },
@@ -105,10 +105,10 @@ export const drugs = [
       '고령 환자 (65세 이상): 암로디핀 저용량(5mg)부터 시작 권고',
     ],
     prices: [
-      { spec: '암로디핀 5mg/아토르바스타틴 10mg', insurancePrice: 790, nonInsurancePrice: 1130, unit: '정', reimbursementRate: '80%' },
-      { spec: '암로디핀 5mg/아토르바스타틴 20mg', insurancePrice: 1010, nonInsurancePrice: 1445, unit: '정', reimbursementRate: '80%' },
-      { spec: '암로디핀 10mg/아토르바스타틴 10mg', insurancePrice: 1052, nonInsurancePrice: 1505, unit: '정', reimbursementRate: '80%' },
-      { spec: '암로디핀 10mg/아토르바스타틴 20mg', insurancePrice: 1318, nonInsurancePrice: 1885, unit: '정', reimbursementRate: '80%' },
+      { spec: '암로디핀 5mg/아토르바스타틴 10mg', insurancePrice: 790, unit: '정', reimbursementRate: '80%' },
+      { spec: '암로디핀 5mg/아토르바스타틴 20mg', insurancePrice: 1010, unit: '정', reimbursementRate: '80%' },
+      { spec: '암로디핀 10mg/아토르바스타틴 10mg', insurancePrice: 1052, unit: '정', reimbursementRate: '80%' },
+      { spec: '암로디핀 10mg/아토르바스타틴 20mg', insurancePrice: 1318, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
       { name: '카듀엣정 5/10mg', manufacturer: '한국화이자제약(주)', ingredient: '암로디핀/아토르바스타틴(오리지널)', insurancePrice: 790, class: 'CCB+스타틴' },
@@ -167,9 +167,9 @@ export const drugs = [
       '협심증 환자에서 갑작스러운 투여 중단 시 증상 악화 가능',
     ],
     prices: [
-      { spec: '2.5mg', insurancePrice: 132, nonInsurancePrice: 189, unit: '정', reimbursementRate: '80%' },
-      { spec: '5mg',   insurancePrice: 243, nonInsurancePrice: 347, unit: '정', reimbursementRate: '80%' },
-      { spec: '10mg',  insurancePrice: 456, nonInsurancePrice: 651, unit: '정', reimbursementRate: '80%' },
+      { spec: '2.5mg', insurancePrice: 132, unit: '정', reimbursementRate: '80%' },
+      { spec: '5mg',   insurancePrice: 418, unit: '정', reimbursementRate: '80%' },
+      { spec: '10mg',  insurancePrice: 456, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
       { name: '아달라트오로스정 30mg', manufacturer: '바이엘코리아(주)', ingredient: '니페디핀', insurancePrice: 317, class: 'CCB(니페디핀)' },
@@ -239,10 +239,10 @@ export const drugs = [
       '약물 의존성 위험 — 마약류 관련 법령 적용',
     ],
     prices: [
-      { spec: '25mg', insurancePrice: 312, nonInsurancePrice: 446, unit: '캡슐', reimbursementRate: '80%' },
-      { spec: '75mg', insurancePrice: 607, nonInsurancePrice: 867, unit: '캡슐', reimbursementRate: '80%' },
-      { spec: '150mg', insurancePrice: 1001, nonInsurancePrice: 1430, unit: '캡슐', reimbursementRate: '80%' },
-      { spec: '300mg', insurancePrice: 1735, nonInsurancePrice: 2479, unit: '캡슐', reimbursementRate: '80%' },
+      { spec: '25mg', insurancePrice: 312, unit: '캡슐', reimbursementRate: '80%' },
+      { spec: '75mg', insurancePrice: 523, unit: '캡슐', reimbursementRate: '80%' },
+      { spec: '150mg', insurancePrice: 666, unit: '캡슐', reimbursementRate: '80%' },
+      { spec: '300mg', insurancePrice: 1735, unit: '캡슐', reimbursementRate: '80%' },
     ],
     competitors: [
       { name: '뉴론틴캡슐 300mg', manufacturer: '한국화이자제약(주)', ingredient: '가바펜틴', insurancePrice: 312, class: '알파2-델타 리간드(가바펜틴)' },
@@ -307,8 +307,8 @@ export const drugs = [
       '와파린 등 항응고제 병용 시 INR 모니터링',
     ],
     prices: [
-      { spec: '100mg', insurancePrice: 284, nonInsurancePrice: 406, unit: '캡슐', reimbursementRate: '80%' },
-      { spec: '200mg', insurancePrice: 479, nonInsurancePrice: 685, unit: '캡슐', reimbursementRate: '80%' },
+      { spec: '100mg', insurancePrice: 331, unit: '캡슐', reimbursementRate: '80%' },
+      { spec: '200mg', insurancePrice: 479, unit: '캡슐', reimbursementRate: '80%' },
     ],
     competitors: [
       { name: '아세클로정 100mg', manufacturer: '한독(주)', ingredient: '아세클로페낙', insurancePrice: 158, class: 'NSAIDs(아세클로페낙)' },
