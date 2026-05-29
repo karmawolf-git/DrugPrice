@@ -309,7 +309,11 @@ function GenericTable({ drug }) {
     let list = drug.generics
     if (filter.trim()) {
       const q = filter.trim().toLowerCase()
-      list = list.filter(g => g.name.toLowerCase().includes(q) || g.manufacturer.toLowerCase().includes(q))
+      list = list.filter(g =>
+        (g.productName ?? g.name).toLowerCase().includes(q) ||
+        g.name.toLowerCase().includes(q) ||
+        g.manufacturer.toLowerCase().includes(q)
+      )
     }
     if (specFilter !== 'all') {
       list = list.filter(g => {
@@ -318,7 +322,8 @@ function GenericTable({ drug }) {
       })
     }
     return [...list].sort((a, b) => {
-      let va = a[sort.key], vb = b[sort.key]
+      let va = sort.key === 'name' ? (a.productName ?? a.name) : a[sort.key]
+      let vb = sort.key === 'name' ? (b.productName ?? b.name) : b[sort.key]
       if (typeof va === 'string') va = va.toLowerCase(), vb = vb.toLowerCase()
       if (va < vb) return sort.dir === 'asc' ? -1 : 1
       if (va > vb) return sort.dir === 'asc' ? 1 : -1
@@ -436,8 +441,15 @@ function GenericTable({ drug }) {
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
                   <Td>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontWeight: 600 }}>{g.name}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ fontWeight: 700 }}>{g.productName ?? g.name}</span>
+                      {g.productName && (
+                        <span style={{
+                          fontSize: 11,
+                          color: 'var(--text-muted)',
+                          display: 'inline-block',
+                        }}>{g.name}</span>
+                      )}
                     </div>
                   </Td>
                   <Td style={{ color: 'var(--text-secondary)' }}>{g.manufacturer}</Td>
