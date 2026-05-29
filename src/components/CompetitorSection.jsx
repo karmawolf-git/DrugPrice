@@ -1,39 +1,15 @@
 import React, { useState, useMemo } from 'react'
 
+const GENERIC_DEFAULT_LIMIT = 10
+
 function fmt(n) {
   return n.toLocaleString('ko-KR') + '원'
 }
 
-function SortButton({ active, dir, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '4px 10px',
-        borderRadius: 6,
-        border: '1px solid',
-        borderColor: active ? 'currentColor' : 'var(--border)',
-        background: active ? '#f8fafc' : 'transparent',
-        color: active ? 'var(--text-primary)' : 'var(--text-muted)',
-        fontSize: 12,
-        fontWeight: active ? 600 : 400,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-      }}
-    >
-      {children}
-      <span style={{ fontSize: 10 }}>{active ? (dir === 'asc' ? '▲' : '▼') : '↕'}</span>
-    </button>
-  )
-}
-
-function PriceBar({ value, max, color, label }) {
+function PriceBar({ value, max, color }) {
   const pct = Math.min(100, Math.round((value / max) * 100))
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 120 }}>
+    <div style={{ minWidth: 100 }}>
       <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
         <div style={{
           width: `${pct}%`,
@@ -192,7 +168,10 @@ function CompetitorTable({ drug }) {
         color: drug.color,
       }}>
         <span>📌</span>
-        <span>비교 기준: <strong>{drug.name} {drug.prices[0]?.spec}</strong> 보험급여가 <strong>{fmt(refPrice)}</strong> (최저 규격)</span>
+        <span>
+          비교 기준: <strong>{drug.name} {drug.prices[0]?.spec}</strong>{' '}
+          보험급여가 <strong>{fmt(refPrice)}</strong> (최저 규격)
+        </span>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -203,8 +182,8 @@ function CompetitorTable({ drug }) {
               <Th>성분명</Th>
               <Th sortKey="class" currentSort={sort} onSort={toggleSort}>약효 분류</Th>
               <Th sortKey="insurancePrice" currentSort={sort} onSort={toggleSort}>보험급여가</Th>
-              <Th>비교</Th>
-              <Th style={{ minWidth: 130 }}>가격 바</Th>
+              <Th>우리 제품 대비</Th>
+              <Th style={{ minWidth: 110 }}>가격 바</Th>
             </tr>
           </thead>
           <tbody>
@@ -216,14 +195,12 @@ function CompetitorTable({ drug }) {
               </tr>
             ) : rows.map((c, i) => {
               const diff = c.insurancePrice - refPrice
-              const diffPct = refPrice ? ((diff / refPrice) * 100).toFixed(0) : 0
+              const diffPct = refPrice ? ((Math.abs(diff) / refPrice) * 100).toFixed(0) : 0
               const isHigher = diff > 0
               const isSame = diff === 0
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
-                  <Td>
-                    <span style={{ fontWeight: 600 }}>{c.name}</span>
-                  </Td>
+                  <Td><span style={{ fontWeight: 600 }}>{c.name}</span></Td>
                   <Td style={{ color: 'var(--text-secondary)' }}>{c.manufacturer}</Td>
                   <Td>
                     <span style={{
@@ -249,7 +226,7 @@ function CompetitorTable({ drug }) {
                     {isSame ? (
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>동일</span>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         <span style={{
                           display: 'inline-block',
                           padding: '2px 8px',
@@ -259,10 +236,10 @@ function CompetitorTable({ drug }) {
                           background: isHigher ? '#fef3c7' : '#dcfce7',
                           color: isHigher ? '#92400e' : '#166534',
                         }}>
-                          {isHigher ? '▲' : '▼'} {Math.abs(diffPct)}%
+                          {isHigher ? '▲' : '▼'} {diffPct}%
                         </span>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                          {isHigher ? '+' : ''}{fmt(diff)}
+                          {isHigher ? '+' : '-'}{Math.abs(diff).toLocaleString()}원 차이
                         </span>
                       </div>
                     )}
@@ -285,27 +262,34 @@ function GenericTable({ drug }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
   const [specFilter, setSpecFilter] = useState('all')
+  const [showAll, setShowAll] = useState(false)
 
-  const refPriceBySpec = {}
-  drug.prices.forEach(p => { refPriceBySpec[p.spec] = p.insurancePrice })
-
-  // spec 목록 추출 (제네릭 이름에서 mg 파싱)
+  // specKey 기준으로 규격 목록 구성
   const specs = useMemo(() => {
-    const set = new Set()
-    drug.generics.forEach(g => {
-      const m = g.name.match(/\d+mg/g)
-      if (m) set.add(m.join('/'))
-    })
+    const set = new Set(drug.generics.map(g => g.specKey).filter(Boolean))
     return ['all', ...Array.from(set)]
   }, [drug.generics])
 
-  const maxPrice = Math.max(...drug.generics.map(g => g.insurancePrice), ...drug.prices.map(p => p.insurancePrice))
+  // specKey로 오리지널 가격 조회
+  const priceBySpec = useMemo(() => {
+    const map = {}
+    drug.prices.forEach(p => { map[p.spec] = p.insurancePrice })
+    return map
+  }, [drug.prices])
+
+  const maxPrice = Math.max(
+    ...drug.generics.map(g => g.insurancePrice),
+    ...drug.prices.map(p => p.insurancePrice),
+  )
 
   const toggleSort = key => setSort(prev =>
     prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
   )
 
-  const rows = useMemo(() => {
+  const isSearching = filter.trim() !== ''
+
+  // 전체 목록 (정렬+필터 적용)
+  const allRows = useMemo(() => {
     let list = drug.generics
     if (filter.trim()) {
       const q = filter.trim().toLowerCase()
@@ -316,10 +300,7 @@ function GenericTable({ drug }) {
       )
     }
     if (specFilter !== 'all') {
-      list = list.filter(g => {
-        const m = g.name.match(/\d+mg/g)
-        return m && m.join('/') === specFilter
-      })
+      list = list.filter(g => g.specKey === specFilter)
     }
     return [...list].sort((a, b) => {
       let va = sort.key === 'name' ? (a.productName ?? a.name) : a[sort.key]
@@ -331,16 +312,9 @@ function GenericTable({ drug }) {
     })
   }, [drug.generics, sort, filter, specFilter])
 
-  // 규격별 최저가
-  const lowestBySpec = useMemo(() => {
-    const map = {}
-    drug.generics.forEach(g => {
-      const m = g.name.match(/\d+mg/g)
-      const spec = m ? m.join('/') : '기타'
-      if (!map[spec] || g.insurancePrice < map[spec]) map[spec] = g.insurancePrice
-    })
-    return map
-  }, [drug.generics])
+  // 검색 중이면 전체, 아니면 10개 (또는 더보기 클릭 시 전체)
+  const displayRows = (isSearching || showAll) ? allRows : allRows.slice(0, GENERIC_DEFAULT_LIMIT)
+  const hasMore = !isSearching && !showAll && allRows.length > GENERIC_DEFAULT_LIMIT
 
   return (
     <TableSection
@@ -353,7 +327,7 @@ function GenericTable({ drug }) {
           {specs.length > 2 && (
             <select
               value={specFilter}
-              onChange={e => setSpecFilter(e.target.value)}
+              onChange={e => { setSpecFilter(e.target.value); setShowAll(false) }}
               style={{
                 padding: '5px 8px',
                 borderRadius: 6,
@@ -371,8 +345,8 @@ function GenericTable({ drug }) {
           )}
           <input
             value={filter}
-            onChange={e => setFilter(e.target.value)}
-            placeholder="제품명·제조사 검색"
+            onChange={e => { setFilter(e.target.value); setShowAll(false) }}
+            placeholder="전체 제네릭 검색"
             style={{
               padding: '5px 10px',
               borderRadius: 6,
@@ -386,28 +360,38 @@ function GenericTable({ drug }) {
         </div>
       }
     >
+      {/* 상태 배너 */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         padding: '8px 14px',
-        background: '#f0fdf4',
-        borderBottom: '1px solid #bbf7d0',
+        background: isSearching ? '#eff6ff' : '#f0fdf4',
+        borderBottom: `1px solid ${isSearching ? '#bfdbfe' : '#bbf7d0'}`,
         fontSize: 12,
-        color: '#166534',
+        color: isSearching ? '#1d4ed8' : '#166534',
         flexWrap: 'wrap',
-        rowGap: 4,
       }}>
-        <span>✅</span>
-        <span>생물학적 동등성 입증 완료 제품 — 동일 성분·용량으로 오리지널 대비 약 <strong>50%</strong> 수준의 급여가 적용</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
-          {Object.entries(lowestBySpec).slice(0, 3).map(([spec, price]) => (
-            <span key={spec} style={{ fontSize: 11 }}>
-              {spec} 최저: <strong>{fmt(price)}</strong>
+        {isSearching ? (
+          <>
+            <span>🔍</span>
+            <span>
+              전체 {drug.generics.length}품목 중 <strong>{allRows.length}개</strong> 검색됨
             </span>
-          ))}
-        </div>
+          </>
+        ) : (
+          <>
+            <span>✅</span>
+            <span>
+              전체 <strong>{drug.generics.length}품목</strong> 중 주요 <strong>{Math.min(GENERIC_DEFAULT_LIMIT, allRows.length)}품목</strong> 표시
+              {allRows.length > GENERIC_DEFAULT_LIMIT && !showAll && (
+                <> — 나머지 {allRows.length - GENERIC_DEFAULT_LIMIT}품목은 검색하거나 더 보기를 클릭하세요</>
+              )}
+            </span>
+          </>
+        )}
       </div>
+
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -416,27 +400,21 @@ function GenericTable({ drug }) {
               <Th sortKey="manufacturer" currentSort={sort} onSort={toggleSort}>제조사</Th>
               <Th sortKey="approvalDate" currentSort={sort} onSort={toggleSort}>허가일</Th>
               <Th sortKey="insurancePrice" currentSort={sort} onSort={toggleSort}>보험급여가</Th>
-              <Th>오리지널 대비</Th>
-              <Th>절감액</Th>
-              <Th style={{ minWidth: 130 }}>가격 바</Th>
+              <Th>우리 제품 대비 차액</Th>
+              <Th style={{ minWidth: 110 }}>가격 바</Th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {displayRows.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                   검색 결과가 없습니다
                 </td>
               </tr>
-            ) : rows.map((g, i) => {
-              // 같은 규격 오리지널 가격 찾기
-              const specMatch = g.name.match(/(\d+mg)/g)
-              const matchedSpec = specMatch ? specMatch[specMatch.length - 1] : null
-              const origPrice = matchedSpec
-                ? drug.prices.find(p => p.spec === matchedSpec)?.insurancePrice
-                : drug.prices[0]?.insurancePrice
-              const saving = origPrice ? origPrice - g.insurancePrice : null
-              const ratio = origPrice ? ((g.insurancePrice / origPrice) * 100).toFixed(0) : '-'
+            ) : displayRows.map((g, i) => {
+              const origPrice = g.specKey ? priceBySpec[g.specKey] : drug.prices[0]?.insurancePrice
+              const saving = origPrice != null ? origPrice - g.insurancePrice : null
+              const savingPct = origPrice ? ((saving / origPrice) * 100).toFixed(0) : null
 
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
@@ -444,11 +422,7 @@ function GenericTable({ drug }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                       <span style={{ fontWeight: 700 }}>{g.productName ?? g.name}</span>
                       {g.productName && (
-                        <span style={{
-                          fontSize: 11,
-                          color: 'var(--text-muted)',
-                          display: 'inline-block',
-                        }}>{g.name}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{g.name}</span>
                       )}
                     </div>
                   </Td>
@@ -460,26 +434,31 @@ function GenericTable({ drug }) {
                     </span>
                   </Td>
                   <Td>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '2px 8px',
-                      borderRadius: 10,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: '#dcfce7',
-                      color: '#166534',
-                    }}>
-                      ▼ {ratio}%
-                    </span>
-                  </Td>
-                  <Td>
-                    {saving !== null && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <span style={{ fontWeight: 600, color: '#0369a1', fontSize: 13 }}>
-                          -{fmt(saving)}
-                        </span>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>1정 기준</span>
+                    {saving != null ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {/* 기준가 */}
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          {drug.name} {g.specKey}: {fmt(origPrice)}
+                        </div>
+                        {/* 차액 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{
+                            padding: '2px 8px',
+                            borderRadius: 10,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            background: '#dcfce7',
+                            color: '#166534',
+                          }}>
+                            ▼ {savingPct}%
+                          </span>
+                          <span style={{ fontWeight: 600, color: '#0369a1', fontSize: 13 }}>
+                            -{saving.toLocaleString()}원
+                          </span>
+                        </div>
                       </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>-</span>
                     )}
                   </Td>
                   <Td>
@@ -491,6 +470,35 @@ function GenericTable({ drug }) {
           </tbody>
         </table>
       </div>
+
+      {/* 더 보기 / 접기 */}
+      {(hasMore || (showAll && allRows.length > GENERIC_DEFAULT_LIMIT && !isSearching)) && (
+        <div style={{
+          textAlign: 'center',
+          padding: '12px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--surface-2)',
+        }}>
+          <button
+            onClick={() => setShowAll(v => !v)}
+            style={{
+              padding: '6px 20px',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text-secondary)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {showAll
+              ? `▲ 접기 (상위 ${GENERIC_DEFAULT_LIMIT}개만 보기)`
+              : `▼ 더 보기 (${allRows.length - GENERIC_DEFAULT_LIMIT}개 더)`}
+          </button>
+        </div>
+      )}
     </TableSection>
   )
 }
