@@ -45,7 +45,7 @@ export default function App() {
           </div>
         </div>
 
-        <CompetitorSection drug={drug} />
+        <CompetitorSection key={drug.id} drug={drug} />
 
         <footer style={{
           textAlign: 'center',

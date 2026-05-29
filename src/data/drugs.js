@@ -167,8 +167,9 @@ export const drugs = [
       '협심증 환자에서 갑작스러운 투여 중단 시 증상 악화 가능',
     ],
     prices: [
-      { spec: '5mg', insurancePrice: 243, nonInsurancePrice: 347, unit: '정', reimbursementRate: '80%' },
-      { spec: '10mg', insurancePrice: 456, nonInsurancePrice: 651, unit: '정', reimbursementRate: '80%' },
+      { spec: '2.5mg', insurancePrice: 132, nonInsurancePrice: 189, unit: '정', reimbursementRate: '80%' },
+      { spec: '5mg',   insurancePrice: 243, nonInsurancePrice: 347, unit: '정', reimbursementRate: '80%' },
+      { spec: '10mg',  insurancePrice: 456, nonInsurancePrice: 651, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
       { name: '아달라트오로스정 30mg', manufacturer: '바이엘코리아(주)', ingredient: '니페디핀', insurancePrice: 389, class: 'CCB(니페디핀)' },
@@ -178,6 +179,11 @@ export const drugs = [
       { name: '엑스포지정 5/5mg', manufacturer: '한국노바티스(주)', ingredient: '발사르탄/암로디핀', insurancePrice: 812, class: 'ARB+CCB 복합제' },
     ],
     generics: [
+      { productName: '암로핀정 2.5mg',   name: '암로디핀베실산염정 2.5mg', specKey: '2.5mg', manufacturer: '한미약품(주)',    insurancePrice: 66, approvalDate: '2006-07-18' },
+      { productName: '노암핀정 2.5mg',   name: '암로디핀베실산염정 2.5mg', specKey: '2.5mg', manufacturer: '동아에스티(주)',  insurancePrice: 66, approvalDate: '2006-07-18' },
+      { productName: '암디핀정 2.5mg',   name: '암로디핀베실산염정 2.5mg', specKey: '2.5mg', manufacturer: '종근당(주)',      insurancePrice: 66, approvalDate: '2006-07-18' },
+      { productName: '노바핀정 2.5mg',   name: '암로디핀베실산염정 2.5mg', specKey: '2.5mg', manufacturer: '대웅제약(주)',    insurancePrice: 66, approvalDate: '2006-07-18' },
+      { productName: '암로보령정 2.5mg', name: '암로디핀베실산염정 2.5mg', specKey: '2.5mg', manufacturer: '보령제약(주)',    insurancePrice: 66, approvalDate: '2007-02-14' },
       { productName: '암로핀정 5mg',     name: '암로디핀베실산염정 5mg',  specKey: '5mg', manufacturer: '한미약품(주)',    insurancePrice: 121, approvalDate: '2006-07-18' },
       { productName: '노암핀정 5mg',     name: '암로디핀베실산염정 5mg',  specKey: '5mg', manufacturer: '동아에스티(주)',  insurancePrice: 121, approvalDate: '2006-07-18' },
       { productName: '암디핀정 5mg',     name: '암로디핀베실산염정 5mg',  specKey: '5mg', manufacturer: '종근당(주)',      insurancePrice: 121, approvalDate: '2006-07-18' },
