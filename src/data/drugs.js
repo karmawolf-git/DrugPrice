@@ -34,7 +34,7 @@ export const drugs = [
       '혈당 상승 및 신규 당뇨병 발생 위험 증가 보고',
     ],
     prices: [
-      { spec: '10mg', insurancePrice: 421, nonInsurancePrice: 600, unit: '정', reimbursementRate: '80%' },
+      { spec: '10mg', insurancePrice: 638, nonInsurancePrice: 912, unit: '정', reimbursementRate: '80%' },
       { spec: '20mg', insurancePrice: 607, nonInsurancePrice: 870, unit: '정', reimbursementRate: '80%' },
       { spec: '40mg', insurancePrice: 971, nonInsurancePrice: 1390, unit: '정', reimbursementRate: '80%' },
       { spec: '80mg', insurancePrice: 1489, nonInsurancePrice: 2130, unit: '정', reimbursementRate: '80%' },
