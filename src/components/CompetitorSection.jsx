@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import allGenerics from '../data/allGenerics.js'
 
 const GENERIC_DEFAULT_LIMIT = 10
 
@@ -288,19 +289,25 @@ function GenericTable({ drug }) {
 
   const isSearching = filter.trim() !== ''
 
+  // 전체 HIRA DB (검색용)
+  const fullList = useMemo(() => allGenerics[drug.id] ?? [], [drug.id])
+
   // 전체 목록 (정렬+필터 적용)
   const allRows = useMemo(() => {
-    let list = drug.generics
     const q = filter.trim().toLowerCase()
+    let list
     if (q) {
-      // 검색 중에는 규격 필터 무시 — 전 제품 검색
-      list = list.filter(g =>
-        (g.productName ?? g.name).toLowerCase().includes(q) ||
-        g.name.toLowerCase().includes(q) ||
+      // 검색 중: HIRA 전체 DB 검색, 규격 필터 무시
+      list = fullList.filter(g =>
+        g.productName.toLowerCase().includes(q) ||
         g.manufacturer.toLowerCase().includes(q)
       )
-    } else if (specFilter !== 'all') {
-      list = list.filter(g => g.specKey === specFilter)
+    } else {
+      // 기본: 큐레이션 목록, 규격 필터 적용
+      list = drug.generics
+      if (specFilter !== 'all') {
+        list = list.filter(g => g.specKey === specFilter)
+      }
     }
     return [...list].sort((a, b) => {
       let va = sort.key === 'name' ? (a.productName ?? a.name) : a[sort.key]
@@ -310,7 +317,7 @@ function GenericTable({ drug }) {
       if (va > vb) return sort.dir === 'asc' ? 1 : -1
       return 0
     })
-  }, [drug.generics, sort, filter, specFilter])
+  }, [drug.generics, fullList, sort, filter, specFilter])
 
   // 검색 중이면 전체, 아니면 10개 (또는 더보기 클릭 시 전체)
   const displayRows = (isSearching || showAll) ? allRows : allRows.slice(0, GENERIC_DEFAULT_LIMIT)
@@ -376,7 +383,7 @@ function GenericTable({ drug }) {
           <>
             <span>🔍</span>
             <span>
-              전체 {drug.generics.length}품목 중 <strong>{allRows.length}개</strong> 검색됨
+              동일성분 전체 {fullList.length}품목 중 <strong>{allRows.length}개</strong> 검색됨
             </span>
           </>
         ) : (
@@ -421,13 +428,13 @@ function GenericTable({ drug }) {
                   <Td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                       <span style={{ fontWeight: 700 }}>{g.productName ?? g.name}</span>
-                      {g.productName && (
+                      {g.name && g.name !== g.productName && (
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{g.name}</span>
                       )}
                     </div>
                   </Td>
                   <Td style={{ color: 'var(--text-secondary)' }}>{g.manufacturer}</Td>
-                  <Td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{g.approvalDate}</Td>
+                  <Td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{g.approvalDate ?? '-'}</Td>
                   <Td>
                     <span style={{ fontWeight: 700, fontSize: 15, color: '#0f766e' }}>
                       {fmt(g.insurancePrice)}
