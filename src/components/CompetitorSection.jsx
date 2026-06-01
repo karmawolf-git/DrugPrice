@@ -414,7 +414,7 @@ function GenericTable({ drug }) {
             ) : displayRows.map((g, i) => {
               const origPrice = g.specKey ? priceBySpec[g.specKey] : drug.prices[0]?.insurancePrice
               const saving = origPrice != null ? origPrice - g.insurancePrice : null
-              const savingPct = origPrice ? ((saving / origPrice) * 100).toFixed(0) : null
+              const savingPct = (origPrice && saving != null) ? Math.round(Math.abs(saving) / origPrice * 100) : null
 
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
@@ -435,28 +435,30 @@ function GenericTable({ drug }) {
                   </Td>
                   <Td>
                     {saving != null ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        {/* 기준가 */}
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                          {drug.name} {g.specKey}: {fmt(origPrice)}
+                      saving === 0 ? (
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>동일</span>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            {drug.name} {g.specKey}: {fmt(origPrice)}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: 10,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              background: saving > 0 ? '#dcfce7' : '#fef3c7',
+                              color: saving > 0 ? '#166534' : '#92400e',
+                            }}>
+                              {saving > 0 ? '▼' : '▲'} {Math.abs(savingPct)}%
+                            </span>
+                            <span style={{ fontWeight: 600, color: saving > 0 ? '#0369a1' : '#b45309', fontSize: 13 }}>
+                              {saving > 0 ? `-${saving.toLocaleString()}원` : `+${Math.abs(saving).toLocaleString()}원`}
+                            </span>
+                          </div>
                         </div>
-                        {/* 차액 */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{
-                            padding: '2px 8px',
-                            borderRadius: 10,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            background: '#dcfce7',
-                            color: '#166534',
-                          }}>
-                            ▼ {savingPct}%
-                          </span>
-                          <span style={{ fontWeight: 600, color: '#0369a1', fontSize: 13 }}>
-                            -{saving.toLocaleString()}원
-                          </span>
-                        </div>
-                      </div>
+                      )
                     ) : (
                       <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>-</span>
                     )}
