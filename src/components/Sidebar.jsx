@@ -74,7 +74,7 @@ export default function Sidebar({ drugs, selectedId, onSelect }) {
         <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
           <div style={{ fontWeight: 600, marginBottom: 2 }}>데이터 기준</div>
           <div>건강보험심사평가원</div>
-          <div>기준일: 2025년 1월</div>
+          <div>기준일: 2026년 6월 1일</div>
         </div>
       </div>
     </aside>

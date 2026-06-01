@@ -54,7 +54,7 @@ export default function App() {
           color: 'var(--text-muted)',
           borderTop: '1px solid var(--border)',
         }}>
-          본 대시보드는 건강보험심사평가원(HIRA) 기준 약가 정보를 바탕으로 한 참고용 데이터입니다. 실제 약가는 고시 변경에 따라 달라질 수 있습니다. 기준일: 2025년 1월
+          본 대시보드는 건강보험심사평가원(HIRA) 기준 약가 정보를 바탕으로 한 참고용 데이터입니다. 실제 약가는 고시 변경에 따라 달라질 수 있습니다. 기준일: 2026년 6월 1일
         </footer>
       </main>
     </div>
