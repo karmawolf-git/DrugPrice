@@ -291,15 +291,15 @@ function GenericTable({ drug }) {
   // 전체 목록 (정렬+필터 적용)
   const allRows = useMemo(() => {
     let list = drug.generics
-    if (filter.trim()) {
-      const q = filter.trim().toLowerCase()
+    const q = filter.trim().toLowerCase()
+    if (q) {
+      // 검색 중에는 규격 필터 무시 — 전 제품 검색
       list = list.filter(g =>
         (g.productName ?? g.name).toLowerCase().includes(q) ||
         g.name.toLowerCase().includes(q) ||
         g.manufacturer.toLowerCase().includes(q)
       )
-    }
-    if (specFilter !== 'all') {
+    } else if (specFilter !== 'all') {
       list = list.filter(g => g.specKey === specFilter)
     }
     return [...list].sort((a, b) => {
