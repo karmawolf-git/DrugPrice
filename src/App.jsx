@@ -41,10 +41,9 @@ export default function App() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <PriceSection drug={drug} />
+            <ReimbursementSection drug={drug} />
           </div>
         </div>
-
-        <ReimbursementSection drug={drug} />
 
         <CompetitorSection key={drug.id} drug={drug} />
 
@@ -103,65 +102,55 @@ function ReimbursementSection({ drug }) {
 
   return (
     <div style={{
+      background: 'var(--surface)',
       borderRadius: 'var(--radius)',
-      border: `2px solid ${drug.color}`,
-      boxShadow: 'var(--shadow)',
+      border: '1px solid var(--border)',
+      boxShadow: 'var(--shadow-sm)',
       overflow: 'hidden',
-      background: '#ffffff',
-      flexShrink: 0,
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         padding: '14px 20px',
-        borderBottom: `2px solid ${drug.color}`,
-        background: drug.lightColor,
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface-2)',
       }}>
         <span style={{ fontSize: 16 }}>📋</span>
-        <span style={{ fontWeight: 700, fontSize: 14, color: drug.color }}>보험급여 기준</span>
-        <span style={{
-          padding: '2px 8px',
-          background: '#fff',
-          color: drug.color,
-          borderRadius: 10,
-          fontSize: 11,
-          fontWeight: 700,
-          border: `1px solid ${drug.color}`,
-        }}>HIRA 고시 기준</span>
+        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>보험급여 기준</span>
+        <div style={{ marginLeft: 'auto', width: 32, height: 3, borderRadius: 2, background: drug.color }} />
       </div>
 
-      <div>
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {criteria.map((section, si) => (
           <div key={si} style={{
-            padding: '16px 24px',
-            borderBottom: si < criteria.length - 1 ? '1px solid #e2e8f0' : 'none',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            overflow: 'hidden',
           }}>
             <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              marginBottom: 10,
-              padding: '4px 12px',
-              borderRadius: 6,
-              background: drug.lightColor,
-              border: `1px solid ${drug.color}`,
+              padding: '8px 14px',
+              background: 'var(--surface-2)',
+              borderBottom: '1px solid var(--border)',
             }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: drug.color }}>{section.title}</span>
+              <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{section.title}</span>
             </div>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {(section.items || []).map((item, ii) => (
-                <li key={ii} style={{ display: 'flex', gap: 10, fontSize: 13, color: '#0f172a', lineHeight: 1.6 }}>
-                  <span style={{
-                    width: 6, height: 6,
-                    borderRadius: '50%',
-                    background: drug.color,
-                    flexShrink: 0,
-                    marginTop: 7,
-                  }} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            <div style={{ padding: '10px 14px' }}>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {(section.items || []).map((item, ii) => (
+                  <li key={ii} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span style={{
+                      width: 6, height: 6,
+                      borderRadius: '50%',
+                      background: drug.color,
+                      flexShrink: 0,
+                      marginTop: 6,
+                    }} />
+                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         ))}
       </div>
