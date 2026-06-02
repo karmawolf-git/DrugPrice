@@ -31,6 +31,8 @@ export default function App() {
         <TopBar drug={drug} drugs={drugs} selectedId={selectedId} onSelect={setSelectedId} />
         <DrugHeader drug={drug} />
 
+        <ReimbursementSection drug={drug} />
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -43,8 +45,6 @@ export default function App() {
             <PriceSection drug={drug} />
           </div>
         </div>
-
-        <ReimbursementSection drug={drug} />
 
         <CompetitorSection key={drug.id} drug={drug} />
 
