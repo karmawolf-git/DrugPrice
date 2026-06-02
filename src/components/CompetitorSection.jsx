@@ -455,12 +455,12 @@ function GenericTable({ drug }) {
                               borderRadius: 10,
                               fontSize: 12,
                               fontWeight: 700,
-                              background: saving > 0 ? '#dcfce7' : '#fef3c7',
-                              color: saving > 0 ? '#166534' : '#92400e',
+                              background: saving > 0 ? '#dcfce7' : '#fff7ed',
+                              color: saving > 0 ? '#166534' : '#ea580c',
                             }}>
                               {saving > 0 ? '▼' : '▲'} {Math.abs(savingPct)}%
                             </span>
-                            <span style={{ fontWeight: 600, color: saving > 0 ? '#0369a1' : '#b45309', fontSize: 13 }}>
+                            <span style={{ fontWeight: 600, color: saving > 0 ? '#0369a1' : '#ea580c', fontSize: 13 }}>
                               {saving > 0 ? `-${saving.toLocaleString()}원` : `+${Math.abs(saving).toLocaleString()}원`}
                             </span>
                           </div>

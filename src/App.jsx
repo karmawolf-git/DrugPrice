@@ -31,8 +31,6 @@ export default function App() {
         <TopBar drug={drug} drugs={drugs} selectedId={selectedId} onSelect={setSelectedId} />
         <DrugHeader drug={drug} />
 
-        <ReimbursementSection drug={drug} />
-
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -45,6 +43,8 @@ export default function App() {
             <PriceSection drug={drug} />
           </div>
         </div>
+
+        <ReimbursementSection drug={drug} />
 
         <CompetitorSection key={drug.id} drug={drug} />
 
@@ -103,57 +103,53 @@ function ReimbursementSection({ drug }) {
 
   return (
     <div style={{
-      background: 'var(--surface)',
       borderRadius: 'var(--radius)',
-      border: '1px solid var(--border)',
-      borderTop: `3px solid ${drug.color}`,
-      boxShadow: 'var(--shadow-sm)',
+      border: `2px solid ${drug.color}`,
+      boxShadow: 'var(--shadow)',
       overflow: 'hidden',
+      background: '#ffffff',
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         padding: '14px 20px',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--surface-2)',
+        borderBottom: `2px solid ${drug.color}`,
+        background: drug.lightColor,
       }}>
         <span style={{ fontSize: 16 }}>📋</span>
-        <span style={{ fontWeight: 700, fontSize: 14 }}>보험급여 기준</span>
+        <span style={{ fontWeight: 700, fontSize: 14, color: drug.color }}>보험급여 기준</span>
         <span style={{
           padding: '2px 8px',
-          background: drug.color + '18',
+          background: '#fff',
           color: drug.color,
           borderRadius: 10,
           fontSize: 11,
-          fontWeight: 600,
+          fontWeight: 700,
+          border: `1px solid ${drug.color}`,
         }}>HIRA 고시 기준</span>
-        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)' }}>
-          총 {criteria.length}개 기준
-        </div>
       </div>
 
-      <div style={{ padding: '0' }}>
+      <div>
         {criteria.map((section, si) => (
           <div key={si} style={{
             padding: '16px 24px',
-            borderBottom: si < criteria.length - 1 ? '1px solid var(--border)' : 'none',
+            borderBottom: si < criteria.length - 1 ? '1px solid #e2e8f0' : 'none',
           }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
               marginBottom: 10,
               padding: '4px 12px',
               borderRadius: 6,
-              background: drug.color + '14',
-              border: `1px solid ${drug.color}30`,
+              background: drug.lightColor,
+              border: `1px solid ${drug.color}`,
             }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: drug.color }}>{section.title}</span>
             </div>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
               {(section.items || []).map((item, ii) => (
-                <li key={ii} style={{ display: 'flex', gap: 10, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                <li key={ii} style={{ display: 'flex', gap: 10, fontSize: 13, color: '#0f172a', lineHeight: 1.6 }}>
                   <span style={{
                     width: 6, height: 6,
                     borderRadius: '50%',
