@@ -14,6 +14,13 @@ export const drugs = [
     approvalDate: '1997-03-28',
     classification: 'HMG-CoA 환원효소 억제제 (스타틴계)',
     reimbursementCode: '222201ATB',
+    reimbursementCriteria: [
+      '이상지질혈증으로 생활요법 후 LDL-C 목표치 미달성 시',
+      '초고위험군 (관상동맥질환 기왕력 등): LDL-C ≥ 70 mg/dL',
+      '고위험군 (당뇨·만성신부전 등): LDL-C ≥ 100 mg/dL',
+      '중증도 위험군: LDL-C ≥ 130 mg/dL',
+      '저위험군: LDL-C ≥ 160 mg/dL',
+    ],
     indications: [
       '원발성 고콜레스테롤혈증 (이형접합형 가족성 및 비가족성)',
       '혼합형 이상지질혈증 (Fredrickson types IIa 및 IIb)',
@@ -84,6 +91,12 @@ export const drugs = [
     approvalDate: '2021-02-18',
     classification: 'HMG-CoA 환원효소 억제제 + 콜레스테롤 흡수 억제제 (복합제)',
     reimbursementCode: '633800ATB',
+    reimbursementCriteria: [
+      '스타틴 단독으로 LDL-C 목표치 미달성 시 (에제티미브 병용)',
+      '초고위험군: LDL-C ≥ 70 mg/dL · 고위험군: ≥ 100 mg/dL',
+      '중증도 위험군: LDL-C ≥ 130 mg/dL · 저위험군: ≥ 160 mg/dL',
+      '동형접합 가족형 고콜레스테롤혈증 (별도 기준 적용)',
+    ],
     indications: [
       '원발성(이형접합 가족형 및 비가족형) 고콜레스테롤혈증',
       '동형접합 가족형 고콜레스테롤혈증',
@@ -148,6 +161,12 @@ export const drugs = [
     approvalDate: '1994-07-12',
     classification: '칼슘채널차단제 (디하이드로피리딘계)',
     reimbursementCode: '214701ATB',
+    reimbursementCriteria: [
+      '고혈압 (단독 또는 타 강압제와 병용)',
+      '만성 안정형 협심증',
+      '혈관경련성 협심증 (이형 협심증 포함)',
+      '별도 급여 제한 기준 없음 — 전 규격 80% 급여',
+    ],
     indications: [
       '고혈압 (단독 또는 다른 항고혈압제와 병용)',
       '만성 안정형 협심증',
@@ -206,6 +225,13 @@ export const drugs = [
     approvalDate: '2007-01-25',
     classification: '알파2-델타 리간드 (항경련제/신경병증성 통증 치료제)',
     reimbursementCode: '117302ATB',
+    reimbursementCriteria: [
+      '당뇨병성 신경병증성 통증: NRS ≥ 4점 (10점 척도)',
+      '대상포진 후 신경통: NRS ≥ 4점, 발진 소실 후 3개월 이상 지속',
+      '섬유근육통: 타 약제 효과 불충분 시',
+      '부분발작 보조요법: 기존 항경련제와 병용',
+      '마약류 지정 — 처방·투약 기록 관리 의무',
+    ],
     indications: [
       '말초 및 중추 신경병증성 통증 (당뇨병성 말초 신경병증, 척수 손상 후 통증 등)',
       '대상포진 후 신경통 (PHN)',
@@ -277,6 +303,12 @@ export const drugs = [
     approvalDate: '2000-06-01',
     classification: '선택적 COX-2 억제제 (NSAIDs)',
     reimbursementCode: '118602ATB',
+    reimbursementCriteria: [
+      '골관절염·류마티스관절염 환자 중 위장관 위험인자 보유',
+      '65세 이상 고령 환자',
+      '소화성 궤양 또는 상부 위장관 출혈 기왕력',
+      '경구 스테로이드·항혈전제·항응고제 병용 환자',
+    ],
     indications: [
       '골관절염 (OA)의 증상 및 징후 완화',
       '류마티스 관절염 (RA)의 증상 및 징후 완화',

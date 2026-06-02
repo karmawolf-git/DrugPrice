@@ -170,6 +170,26 @@ function SummaryCard({ drug }) {
           </div>
         ))}
       </div>
+      {drug.reimbursementCriteria?.length > 0 && (
+        <div style={{
+          padding: '12px 18px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--surface-2)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <span style={{ fontSize: 14 }}>📋</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.03em' }}>보험급여 기준</span>
+          </div>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {drug.reimbursementCriteria.map((c, i) => (
+              <li key={i} style={{ display: 'flex', gap: 6, fontSize: 11.5, color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                <span style={{ color: drug.color, fontWeight: 700, flexShrink: 0 }}>·</span>
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
