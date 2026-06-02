@@ -323,6 +323,99 @@ export const drugs = [
         ],
       },
     ],
+    diagnosisCode: {
+      sections: [
+        {
+          title: '당뇨병성 말초신경병증성 통증',
+          titleEn: 'Diabetic peripheral neuropathic pain',
+          groups: [
+            {
+              items: [
+                { code: 'G59.0*', name: '당뇨병성 단일신경증', nameEn: '4단위 및 5단위 숫자 .40에 해당되는 E10-E14+' },
+                { code: 'G63.2*', name: '당뇨병성 다발신경증', nameEn: '4단위 및 5단위 숫자 .41에 해당되는 E10-E14+' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '척추 수술 후 통증 증후군',
+          titleEn: 'Post spinal surgery syndrome',
+          groups: [
+            {
+              items: [
+                { code: 'M96.1', name: '달리 분류되지 않은 척추후궁절제 후 증후군' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '성인 암성 신경병증성 통증',
+          groups: [
+            {
+              items: [
+                { code: 'G63.1*', name: '신생물질환에서의 다발신경벌증', nameEn: 'C00-D48+' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '대상포진 후 신경통',
+          titleEn: 'Postherpetic neuralgia',
+          groups: [
+            {
+              items: [
+                { code: 'G53.0*', name: '대상포진 후 신경통', nameEn: 'B02.2+' },
+                { code: 'G53.0*', name: '포진 후 삼차신경통' },
+                { code: 'G53.0*', name: '포진 후 슬신경절염' },
+                { code: 'G63.0*', name: '포진 후 다발신경병', nameEn: 'B02.2+' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '척수 손상에 따른 신경병증성 통증',
+          titleEn: 'Spinal cord injury',
+          groups: [
+            {
+              items: [
+                { code: 'S14.1', name: '경부척수의 기타 및 상세불명의 손상' },
+                { code: 'S14.1', name: '경부척수의 손상 NOS' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '복합부위 통증 증후군에서 신경병증성 통증',
+          titleEn: 'Complex regional pain syndrome',
+          groups: [
+            {
+              items: [
+                { code: 'G90.5', name: '복합부위 통증증후군 1형' },
+                { code: 'G90.6', name: '복합부위 통증증후군 2형' },
+                { code: 'G90.6', name: '작열통' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '섬유근육통',
+          titleEn: 'Fibromyalgia',
+          groups: [
+            {
+              items: [
+                { code: 'M79.7', name: '섬유근통' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '뇌전증: 허가사항 범위 내 인정',
+          note: '성인에서 이차적 전신 증상을 동반하거나 동반하지 않은 부분발작의 보조제',
+          highlight: true,
+          groups: [],
+        },
+      ],
+    },
     indications: [
       '말초 및 중추 신경병증성 통증 (당뇨병성 말초 신경병증, 척수 손상 후 통증 등)',
       '대상포진 후 신경통 (PHN)',
@@ -423,6 +516,122 @@ export const drugs = [
         ],
       },
     ],
+    diagnosisCode: {
+      sections: [
+        {
+          title: 'M05-06 류마티스관절염',
+          titleEn: 'Rheumatoid arthritis',
+          groups: [
+            {
+              groupCode: 'M05',
+              groupName: '혈청검사양성 류마티스관절염',
+              groupNameEn: 'Seropositive rheumatoid arthritis',
+              items: [
+                { code: 'M05.80-05.89', name: '기타 혈청검사양성 류마티스관절염', nameEn: 'Other seropositive rheumatoid arthritis' },
+                { code: 'M05.90-05.99', name: '상세불명의 혈청검사양성 류마티스관절염', nameEn: 'Seropositive rheumatoid arthritis, unspecified' },
+              ],
+            },
+            {
+              groupCode: 'M06',
+              groupName: '기타 류마티스관절염',
+              groupNameEn: 'Other rheumatoid arthritis',
+              items: [
+                { code: 'M06.00-06.09', name: '혈청검사음성 류마티스관절염', nameEn: 'Seronegative rheumatoid arthritis' },
+                { code: 'M06.80-06.89', name: '기타 명시된 류마티스관절염', nameEn: 'Other specified rheumatoid arthritis' },
+                { code: 'M06.90-06.99', name: '상세불명의 류마티스관절염', nameEn: 'Rheumatoid arthritis, unspecified' },
+              ],
+            },
+          ],
+        },
+        {
+          title: 'M15-19 관절증',
+          titleEn: 'Arthrosis',
+          note: '"골관절염(osteoarthritis)이라는 용어는 관절증(arthrosis) 또는 골관절증(osteoarthritis)과 동의어로 사용"',
+          groups: [
+            {
+              groupCode: 'M15',
+              groupName: '다발관절증',
+              groupSub: '(포함: 두 부위 이상에 대한 언급이 있는 관절증)',
+              groupNameEn: 'Polyarthrosis',
+              items: [
+                { code: 'M15.0', name: '원발성 전신(골)관절증', nameEn: 'Primary generalized(osteo) arthrosis' },
+                { code: 'M15.9', name: '상세불명의 다발관절증', nameEn: 'Polyarthrosis, unspecified' },
+              ],
+            },
+            {
+              groupCode: 'M16',
+              groupName: '고관절증',
+              groupNameEn: 'Coxarthrosis(arthrosis of hip)',
+              items: [
+                { code: 'M16.0', name: '양쪽 원발성 고관절증', nameEn: 'Primary coxarthrosis, bilateral' },
+                { code: 'M16.1', name: '기타 원발성 고관절증 / 원발성 고관절증 NOS / 한쪽 원발성 고관절증', nameEn: 'Other primary coxarthrosis / NOS / unilateral' },
+              ],
+            },
+            {
+              groupCode: 'M17',
+              groupName: '무릎관절증',
+              groupNameEn: 'Gonarthrosis(arthrosis of knee)',
+              items: [
+                { code: 'M17.0', name: '양쪽 원발성 무릎관절증', nameEn: 'Primary gonarthrosis, bilateral' },
+                { code: 'M17.1', name: '기타 원발성 무릎관절증 / 원발성 무릎관절증 NOS / 한쪽 원발성 무릎관절증', nameEn: 'Other primary gonarthrosis / NOS / unilateral' },
+                { code: 'M17.5', name: '기타 이차성 무릎관절증', nameEn: 'Other secondary gonarthrosis' },
+                { code: 'M17.9', name: '상세불명의 무릎관절증', nameEn: 'Gonarthrosis, unspecified' },
+              ],
+            },
+            {
+              groupCode: 'M18',
+              groupName: '제1수근중수관절의 관절증',
+              groupNameEn: 'Arthrosis of first carpometacarpal joint',
+              items: [
+                { code: 'M18.0', name: '제1수근중수관절의 양쪽 원발성 관절증', nameEn: 'Primary arthrosis of first carpometacarpal joints, bilateral' },
+              ],
+            },
+            {
+              groupCode: 'M19',
+              groupName: '기타 관절증',
+              groupNameEn: 'Other arthrosis',
+              items: [
+                { code: 'M19.0-19.09*', name: '기타 관절의 원발성 관절증 / 원발성 관절증 NOS', nameEn: 'Primary arthrosis of other joints / NOS', note: '* 세부 코드는 부위별로 나뉘어져 있습니다.' },
+              ],
+            },
+          ],
+        },
+        {
+          title: 'M45 강직척추염',
+          titleEn: 'Ankylosing spondylitis',
+          note: '* 세부 코드는 부위별로 나뉘어져 있습니다.',
+          groups: [],
+        },
+        {
+          title: 'M47 척추증',
+          titleEn: 'Spondylosis',
+          titleNote: '포함: 척추의 관절증 또는 골관절염, 소관절면의 퇴화 (Arthrosis or osteoarthritis of spine, degeneration of facet joints)',
+          groups: [
+            {
+              items: [
+                { code: 'M47.1', name: '척수병증을 동반한 기타 척추증', nameEn: 'Other spondylosis with myelopathy' },
+                { code: 'M47.2', name: '신경뿌리병증을 동반한 기타 척추증', nameEn: 'Other spondylosis with radiculopathy' },
+                { code: 'M47.8', name: '기타 척추증', nameEn: 'Other spondylosis' },
+              ],
+            },
+          ],
+        },
+        {
+          title: '100 / 100 환자 본인 부담',
+          highlight: true,
+          groups: [
+            {
+              items: [
+                { code: 'R52.0', name: '급성 통증', nameEn: 'Acute pain' },
+                { code: 'K08.80', name: '치통 NOS', nameEn: 'Toothache NOS', note: '성인의 급성 통증 완화 (수술 후, 발치 후 진통)' },
+                { code: 'K08.1', name: '사고·추출·국한성 치주병에 의한 치아상실', nameEn: 'Loss of teeth due to accident, extraction or local periodontal disease' },
+                { code: 'K94.4', name: '원발성 월경통', nameEn: 'Primary dysmenorrhoea', note: '원발 월경통' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     indications: [
       '골관절염 (OA)의 증상 및 징후 완화',
       '류마티스 관절염 (RA)의 증상 및 징후 완화',

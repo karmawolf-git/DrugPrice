@@ -5,10 +5,16 @@ import DrugHeader from './components/DrugHeader.jsx'
 import ApprovalSection from './components/ApprovalSection.jsx'
 import PriceSection from './components/PriceSection.jsx'
 import CompetitorSection from './components/CompetitorSection.jsx'
+import DiagnosisCodePage from './components/DiagnosisCodePage.jsx'
 
 export default function App() {
   const [selectedId, setSelectedId] = useState(drugs[0].id)
+  const [diagDrug, setDiagDrug] = useState(null)
   const drug = drugs.find(d => d.id === selectedId)
+
+  if (diagDrug) {
+    return <DiagnosisCodePage drug={diagDrug} onClose={() => setDiagDrug(null)} />
+  }
 
   return (
     <div style={{
@@ -39,7 +45,7 @@ export default function App() {
           gap: 16,
         }}>
           <ApprovalSection drug={drug} />
-          <ReimbursementSection drug={drug} />
+          <ReimbursementSection drug={drug} onShowDiag={() => setDiagDrug(drug)} />
         </div>
 
         <CompetitorSection key={drug.id} drug={drug} />
@@ -94,7 +100,7 @@ function TopBar({ drug, drugs, selectedId, onSelect }) {
   )
 }
 
-function ReimbursementSection({ drug }) {
+function ReimbursementSection({ drug, onShowDiag }) {
   const criteria = Array.isArray(drug.reimbursementCriteria) ? drug.reimbursementCriteria : []
 
   return (
@@ -115,6 +121,25 @@ function ReimbursementSection({ drug }) {
       }}>
         <span style={{ fontSize: 16 }}>📋</span>
         <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>보험급여 기준</span>
+        {drug.diagnosisCode && (
+          <button
+            onClick={onShowDiag}
+            style={{
+              marginLeft: 8,
+              padding: '3px 10px',
+              borderRadius: 12,
+              border: `1px solid ${drug.color}`,
+              background: drug.lightColor,
+              color: drug.color,
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            📊 상병코드
+          </button>
+        )}
         <div style={{ marginLeft: 'auto', width: 32, height: 3, borderRadius: 2, background: drug.color }} />
       </div>
 
