@@ -24,7 +24,7 @@ function PriceBar({ value, max, color }) {
   )
 }
 
-function TableSection({ title, icon, color, children, count, controls }) {
+function TableSection({ title, icon, color, children, count, controls, hint }) {
   return (
     <div style={{
       background: 'var(--surface)',
@@ -52,6 +52,11 @@ function TableSection({ title, icon, color, children, count, controls }) {
           fontSize: 12,
           fontWeight: 700,
         }}>{count}품목</span>
+        {hint && (
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>
+            💡 {hint}
+          </span>
+        )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
           {controls}
         </div>
@@ -329,6 +334,7 @@ function GenericTable({ drug }) {
       icon="🏭"
       color="#0f766e"
       count={drug.generics.length}
+      hint="검색을 이용하시면 제네릭 전 제품 검색이 가능합니다"
       controls={
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {specs.length > 2 && (
