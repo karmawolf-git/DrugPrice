@@ -40,8 +40,8 @@ export default function App() {
             <ApprovalSection drug={drug} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <PriceSection drug={drug} />
             <ReimbursementSection drug={drug} />
+            <PriceSection drug={drug} />
           </div>
         </div>
 

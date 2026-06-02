@@ -22,7 +22,9 @@ export default function Sidebar({ drugs, selectedId, onSelect }) {
           <span style={{ fontSize: 22 }}>💊</span>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.2 }}>약가 대시보드</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>HIRA 기준 급여/비급여</div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>
+              허가사항 · 용법용량<br />주의사항 · 급여 기준
+            </div>
           </div>
         </div>
       </div>
