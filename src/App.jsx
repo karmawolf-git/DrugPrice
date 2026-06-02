@@ -108,6 +108,7 @@ function ReimbursementSection({ drug }) {
       boxShadow: 'var(--shadow)',
       overflow: 'hidden',
       background: '#ffffff',
+      flexShrink: 0,
     }}>
       <div style={{
         display: 'flex',
