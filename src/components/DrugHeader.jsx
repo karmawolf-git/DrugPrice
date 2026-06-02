@@ -33,6 +33,7 @@ export default function DrugHeader({ drug }) {
       boxShadow: 'var(--shadow-sm)',
       border: '1px solid var(--border)',
       overflow: 'hidden',
+      flexShrink: 0,
     }}>
       <div style={{
         background: `linear-gradient(135deg, ${drug.color} 0%, ${drug.color}cc 100%)`,

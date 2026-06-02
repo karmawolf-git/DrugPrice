@@ -31,18 +31,15 @@ export default function App() {
         <TopBar drug={drug} drugs={drugs} selectedId={selectedId} onSelect={setSelectedId} />
         <DrugHeader drug={drug} />
 
+        <PriceSection drug={drug} />
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: 16,
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <ApprovalSection drug={drug} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <ReimbursementSection drug={drug} />
-            <PriceSection drug={drug} />
-          </div>
+          <ApprovalSection drug={drug} />
+          <ReimbursementSection drug={drug} />
         </div>
 
         <CompetitorSection key={drug.id} drug={drug} />

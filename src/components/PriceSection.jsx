@@ -38,6 +38,7 @@ export default function PriceSection({ drug }) {
       border: '1px solid var(--border)',
       boxShadow: 'var(--shadow-sm)',
       overflow: 'hidden',
+      flexShrink: 0,
     }}>
       <div style={{
         display: 'flex',
