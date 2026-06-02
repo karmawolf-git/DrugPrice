@@ -41,9 +41,10 @@ export default function App() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <PriceSection drug={drug} />
-            <SummaryCard drug={drug} />
           </div>
         </div>
+
+        <ReimbursementSection drug={drug} />
 
         <CompetitorSection key={drug.id} drug={drug} />
 
@@ -97,38 +98,9 @@ function TopBar({ drug, drugs, selectedId, onSelect }) {
   )
 }
 
-function SummaryCard({ drug }) {
-  const lowestInsurance = Math.min(...drug.prices.map(p => p.insurancePrice))
-  const highestInsurance = Math.max(...drug.prices.map(p => p.insurancePrice))
-  const genCount = drug.generics.length
-  const competitorCount = drug.competitors.length
-
-  const items = [
-    {
-      icon: '💊',
-      label: '규격 수',
-      value: `${drug.prices.length}종`,
-      sub: drug.prices.map(p => p.spec).join(', '),
-    },
-    {
-      icon: '💳',
-      label: '급여가 범위',
-      value: `${lowestInsurance.toLocaleString()}~${highestInsurance.toLocaleString()}원`,
-      sub: '1정/캡슐 기준',
-    },
-    {
-      icon: '🏭',
-      label: '제네릭 수',
-      value: `${genCount}품목`,
-      sub: '주요 제네릭 기준',
-    },
-    {
-      icon: '⚔️',
-      label: '경쟁품 수',
-      value: `${competitorCount}품목`,
-      sub: '동일 적응증 오리지널',
-    },
-  ]
+function ReimbursementSection({ drug }) {
+  const criteria = drug.reimbursementCriteria ?? []
+  const cols = criteria.length <= 2 ? criteria.length : criteria.length <= 4 ? 2 : 3
 
   return (
     <div style={{
@@ -146,50 +118,63 @@ function SummaryCard({ drug }) {
         borderBottom: '1px solid var(--border)',
         background: 'var(--surface-2)',
       }}>
-        <span style={{ fontSize: 16 }}>📈</span>
-        <span style={{ fontWeight: 700, fontSize: 14 }}>요약 정보</span>
+        <span style={{ fontSize: 16 }}>📋</span>
+        <span style={{ fontWeight: 700, fontSize: 14 }}>보험급여 기준</span>
+        <span style={{
+          padding: '2px 8px',
+          background: drug.color + '18',
+          color: drug.color,
+          borderRadius: 10,
+          fontSize: 11,
+          fontWeight: 600,
+        }}>HIRA 고시 기준</span>
         <div style={{ marginLeft: 'auto', width: 32, height: 3, borderRadius: 2, background: drug.color }} />
       </div>
+
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: `repeat(${cols}, 1fr)`,
         gap: 0,
       }}>
-        {items.map((item, i) => (
-          <div key={i} style={{
-            padding: '14px 18px',
-            borderRight: i % 2 === 0 ? '1px solid var(--border)' : 'none',
-            borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{item.label}</span>
+        {criteria.map((section, si) => {
+          const isLastRow = si >= criteria.length - (criteria.length % cols || cols)
+          const isRightEdge = (si + 1) % cols === 0
+          return (
+            <div key={si} style={{
+              padding: '16px 20px',
+              borderRight: !isRightEdge ? '1px solid var(--border)' : 'none',
+              borderBottom: !isLastRow ? '1px solid var(--border)' : 'none',
+            }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                marginBottom: 10,
+                padding: '3px 10px',
+                borderRadius: 6,
+                background: drug.color + '14',
+                border: `1px solid ${drug.color}30`,
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: drug.color }}>{section.title}</span>
+              </div>
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {section.items.map((item, ii) => (
+                  <li key={ii} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: 'var(--text-primary)', lineHeight: 1.55 }}>
+                    <span style={{
+                      width: 5, height: 5,
+                      borderRadius: '50%',
+                      background: drug.color,
+                      flexShrink: 0,
+                      marginTop: 6,
+                    }} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div style={{ fontWeight: 700, fontSize: 17, color: drug.color, marginBottom: 2 }}>{item.value}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.sub}</div>
-          </div>
-        ))}
+          )
+        })}
       </div>
-      {drug.reimbursementCriteria?.length > 0 && (
-        <div style={{
-          padding: '12px 18px',
-          borderTop: '1px solid var(--border)',
-          background: 'var(--surface-2)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <span style={{ fontSize: 14 }}>📋</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.03em' }}>보험급여 기준</span>
-          </div>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {drug.reimbursementCriteria.map((c, i) => (
-              <li key={i} style={{ display: 'flex', gap: 6, fontSize: 11.5, color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                <span style={{ color: drug.color, fontWeight: 700, flexShrink: 0 }}>·</span>
-                <span>{c}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   )
 }
