@@ -99,14 +99,14 @@ function TopBar({ drug, drugs, selectedId, onSelect }) {
 }
 
 function ReimbursementSection({ drug }) {
-  const criteria = drug.reimbursementCriteria ?? []
-  const cols = criteria.length <= 2 ? criteria.length : criteria.length <= 4 ? 2 : 3
+  const criteria = Array.isArray(drug.reimbursementCriteria) ? drug.reimbursementCriteria : []
 
   return (
     <div style={{
       background: 'var(--surface)',
       borderRadius: 'var(--radius)',
       border: '1px solid var(--border)',
+      borderTop: `3px solid ${drug.color}`,
       boxShadow: 'var(--shadow-sm)',
       overflow: 'hidden',
     }}>
@@ -128,52 +128,45 @@ function ReimbursementSection({ drug }) {
           fontSize: 11,
           fontWeight: 600,
         }}>HIRA 고시 기준</span>
-        <div style={{ marginLeft: 'auto', width: 32, height: 3, borderRadius: 2, background: drug.color }} />
+        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)' }}>
+          총 {criteria.length}개 기준
+        </div>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: 0,
-      }}>
-        {criteria.map((section, si) => {
-          const isLastRow = si >= criteria.length - (criteria.length % cols || cols)
-          const isRightEdge = (si + 1) % cols === 0
-          return (
-            <div key={si} style={{
-              padding: '16px 20px',
-              borderRight: !isRightEdge ? '1px solid var(--border)' : 'none',
-              borderBottom: !isLastRow ? '1px solid var(--border)' : 'none',
+      <div style={{ padding: '0' }}>
+        {criteria.map((section, si) => (
+          <div key={si} style={{
+            padding: '16px 24px',
+            borderBottom: si < criteria.length - 1 ? '1px solid var(--border)' : 'none',
+          }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              marginBottom: 10,
+              padding: '4px 12px',
+              borderRadius: 6,
+              background: drug.color + '14',
+              border: `1px solid ${drug.color}30`,
             }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                marginBottom: 10,
-                padding: '3px 10px',
-                borderRadius: 6,
-                background: drug.color + '14',
-                border: `1px solid ${drug.color}30`,
-              }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: drug.color }}>{section.title}</span>
-              </div>
-              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {section.items.map((item, ii) => (
-                  <li key={ii} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: 'var(--text-primary)', lineHeight: 1.55 }}>
-                    <span style={{
-                      width: 5, height: 5,
-                      borderRadius: '50%',
-                      background: drug.color,
-                      flexShrink: 0,
-                      marginTop: 6,
-                    }} />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <span style={{ fontSize: 12, fontWeight: 700, color: drug.color }}>{section.title}</span>
             </div>
-          )
-        })}
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {(section.items || []).map((item, ii) => (
+                <li key={ii} style={{ display: 'flex', gap: 10, fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                  <span style={{
+                    width: 6, height: 6,
+                    borderRadius: '50%',
+                    background: drug.color,
+                    flexShrink: 0,
+                    marginTop: 7,
+                  }} />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </div>
   )
