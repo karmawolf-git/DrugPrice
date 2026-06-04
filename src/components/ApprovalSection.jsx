@@ -48,52 +48,161 @@ function ListItems({ items, accentColor }) {
   )
 }
 
-export default function ApprovalSection({ drug }) {
-  const [open, setOpen] = useState({ indications: true, dosage: true, cautions: true })
-  const toggle = key => setOpen(prev => ({ ...prev, [key]: !prev[key] }))
-
+function CautionsModal({ drug, onClose }) {
   return (
-    <SectionCard title="허가사항" icon="📋" accentColor={drug.color}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Accordion
-          title="효능·효과"
-          open={open.indications}
-          onToggle={() => toggle('indications')}
-          color={drug.color}
-        >
-          <ListItems items={drug.indications} accentColor={drug.color} />
-        </Accordion>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        background: 'rgba(0,0,0,0.45)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{
+        background: 'var(--surface)',
+        borderRadius: 12,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        width: '100%',
+        maxWidth: 560,
+        maxHeight: '80vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '14px 20px',
+          background: '#fef2f2',
+          borderBottom: '1px solid #fecaca',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 18 }}>⚠️</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#b91c1c' }}>주요 주의사항 및 금기</div>
+            <div style={{ fontSize: 11, color: '#ef4444', marginTop: 1 }}>{drug.name} ({drug.ingredient})</div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: '1px solid #fecaca',
+              borderRadius: 6,
+              color: '#b91c1c',
+              cursor: 'pointer',
+              padding: '4px 10px',
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+            }}
+          >
+            닫기
+          </button>
+        </div>
 
-        <Accordion
-          title="용법·용량"
-          open={open.dosage}
-          onToggle={() => toggle('dosage')}
-          color={drug.color}
-        >
-          <ListItems items={drug.dosage} accentColor={drug.color} />
-        </Accordion>
-
-        <Accordion
-          title="주요 주의사항 및 금기"
-          open={open.cautions}
-          onToggle={() => toggle('cautions')}
-          color={drug.color}
-          caution
-        >
-          <ListItems items={drug.cautions} accentColor="#ef4444" />
-        </Accordion>
+        <div style={{ overflowY: 'auto', padding: '16px 20px' }}>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, listStyle: 'none' }}>
+            {(drug.cautions || []).map((item, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#ef4444',
+                  marginTop: 6,
+                  flexShrink: 0,
+                }} />
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <div style={{
+            marginTop: 16,
+            padding: '10px 14px',
+            background: '#fff5f5',
+            borderRadius: 6,
+            border: '1px solid #fecaca',
+            fontSize: 11,
+            color: '#b91c1c',
+            lineHeight: 1.6,
+          }}>
+            본 정보는 식품의약품안전처 허가사항에 근거한 참고용 자료입니다. 실제 처방 시 전문 의약 정보를 참조하시기 바랍니다.
+          </div>
+        </div>
       </div>
-    </SectionCard>
+    </div>
   )
 }
 
-function Accordion({ title, open, onToggle, color, caution, children }) {
+export default function ApprovalSection({ drug }) {
+  const [open, setOpen] = useState({ indications: true, dosage: true })
+  const [showCautions, setShowCautions] = useState(false)
+  const toggle = key => setOpen(prev => ({ ...prev, [key]: !prev[key] }))
+
+  return (
+    <>
+      <SectionCard title="허가사항" icon="📋" accentColor={drug.color}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Accordion
+            title="효능·효과"
+            open={open.indications}
+            onToggle={() => toggle('indications')}
+            color={drug.color}
+          >
+            <ListItems items={drug.indications} accentColor={drug.color} />
+          </Accordion>
+
+          <Accordion
+            title="용법·용량"
+            open={open.dosage}
+            onToggle={() => toggle('dosage')}
+            color={drug.color}
+          >
+            <ListItems items={drug.dosage} accentColor={drug.color} />
+          </Accordion>
+
+          <button
+            onClick={() => setShowCautions(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              background: '#fff5f5',
+              border: '1px solid #fecaca',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              width: '100%',
+              textAlign: 'left',
+            }}
+          >
+            <span style={{ fontSize: 14 }}>⚠️</span>
+            <span style={{ fontWeight: 600, fontSize: 13, color: '#b91c1c' }}>주요 주의사항 및 금기</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: '#ef4444', fontWeight: 600 }}>전체보기 ›</span>
+          </button>
+        </div>
+      </SectionCard>
+
+      {showCautions && <CautionsModal drug={drug} onClose={() => setShowCautions(false)} />}
+    </>
+  )
+}
+
+function Accordion({ title, open, onToggle, color, children }) {
   return (
     <div style={{
-      border: `1px solid ${caution ? '#fee2e2' : 'var(--border)'}`,
+      border: '1px solid var(--border)',
       borderRadius: 'var(--radius-sm)',
       overflow: 'hidden',
-      background: caution ? '#fff5f5' : 'var(--surface-2)',
+      background: 'var(--surface-2)',
     }}>
       <button
         onClick={onToggle}
@@ -109,10 +218,7 @@ function Accordion({ title, open, onToggle, color, caution, children }) {
           gap: 8,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {caution && <span style={{ fontSize: 14 }}>⚠️</span>}
-          <span style={{ fontWeight: 600, fontSize: 13, color: caution ? '#b91c1c' : 'var(--text-primary)' }}>{title}</span>
-        </div>
+        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{title}</span>
         <span style={{
           fontSize: 11,
           color: 'var(--text-muted)',
