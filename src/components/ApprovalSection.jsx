@@ -126,14 +126,17 @@ function CautionsModal({ drug, onClose }) {
           <div style={{
             marginTop: 16,
             padding: '10px 14px',
-            background: '#fff5f5',
+            background: 'var(--surface-2)',
             borderRadius: 6,
-            border: '1px solid #fecaca',
+            border: '1px solid var(--border)',
             fontSize: 11,
-            color: '#b91c1c',
-            lineHeight: 1.6,
+            color: 'var(--text-muted)',
+            lineHeight: 1.7,
           }}>
-            본 정보는 식품의약품안전처 허가사항에 근거한 참고용 자료입니다. 실제 처방 시 전문 의약 정보를 참조하시기 바랍니다.
+            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>출처 안내</span><br />
+            본 주의사항은 AI 학습 데이터 기반으로 작성된 참고용 요약본입니다. 공식 허가사항 원문은 반드시 아래 공식 출처를 통해 확인하시기 바랍니다.<br />
+            · 식품의약품안전처 의약품통합정보시스템(DUR): <span style={{ fontFamily: 'monospace' }}>nedrug.mfds.go.kr</span><br />
+            · 건강보험심사평가원(HIRA): <span style={{ fontFamily: 'monospace' }}>www.hira.or.kr</span>
           </div>
         </div>
       </div>
@@ -188,6 +191,19 @@ export default function ApprovalSection({ drug }) {
             <span style={{ fontWeight: 600, fontSize: 13, color: '#b91c1c' }}>주요 주의사항 및 금기</span>
             <span style={{ marginLeft: 'auto', fontSize: 11, color: '#ef4444', fontWeight: 600 }}>전체보기 ›</span>
           </button>
+
+          <div style={{
+            fontSize: 10,
+            color: 'var(--text-muted)',
+            lineHeight: 1.6,
+            paddingTop: 4,
+            borderTop: '1px solid var(--border)',
+            marginTop: 4,
+          }}>
+            ※ 본 허가사항은 AI 학습 데이터 기반 참고용 요약본입니다. 공식 원문은{' '}
+            <span style={{ fontFamily: 'monospace' }}>nedrug.mfds.go.kr</span>{' '}
+            (식품의약품안전처 DUR)에서 확인하시기 바랍니다.
+          </div>
         </div>
       </SectionCard>
 
