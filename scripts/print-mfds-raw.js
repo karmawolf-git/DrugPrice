@@ -21,30 +21,48 @@ const DRUGS = [
   { id: 'caduet',       keyword: '카듀엣정',       cmpName: '비아트리스' },
 ]
 
-function fetchJson(url) {
+function fetchRaw(url) {
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
       let data = ''
       res.on('data', c => { data += c })
-      res.on('end', () => {
-        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
-        try { resolve(JSON.parse(data)) }
-        catch { reject(new Error(`JSON 파싱 실패: ${data.slice(0, 200)}`)) }
-      })
+      res.on('end', () => resolve({ status: res.statusCode, body: data }))
     }).on('error', reject)
   })
 }
 
+async function fetchJson(url) {
+  const { status, body } = await fetchRaw(url)
+  if (status !== 200) throw new Error(`HTTP ${status}: ${body.slice(0, 500)}`)
+  try { return JSON.parse(body) }
+  catch { throw new Error(`JSON 파싱 실패: ${body.slice(0, 300)}`) }
+}
+
+// 사용 가능한 엔드포인트 목록 (순서대로 시도)
+const ENDPOINTS = [
+  'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService04/getDrugPrdtPrmsnDtlInq05',
+  'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService04/getDrugPrdtPrmsnDtlInq04',
+  'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService03/getDrugPrdtPrmsnDtlInq05',
+  'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService03/getDrugPrdtPrmsnDtlInq04',
+]
+
 async function search(keyword, cmpName) {
-  const base = 'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService04/getDrugPrdtPrmsnDtlInq05'
   const k = encodeURIComponent(SERVICE_KEY)
 
-  for (const extra of [`&cmpName=${encodeURIComponent(cmpName)}`, '']) {
-    const url = `${base}?serviceKey=${k}&itemName=${encodeURIComponent(keyword)}${extra}&type=json&numOfRows=5&pageNo=1`
-    const json = await fetchJson(url)
-    const items = json?.body?.items
-    if (items && !(Array.isArray(items) && items.length === 0)) {
-      return Array.isArray(items) ? items[0] : items.item
+  // 엔드포인트 × (업체명 있음/없음) 조합으로 순서대로 시도
+  for (const base of ENDPOINTS) {
+    for (const extra of [`&cmpName=${encodeURIComponent(cmpName)}`, '']) {
+      const url = `${base}?serviceKey=${k}&itemName=${encodeURIComponent(keyword)}${extra}&type=json&numOfRows=5&pageNo=1`
+      try {
+        const json = await fetchJson(url)
+        const items = json?.body?.items
+        if (items && !(Array.isArray(items) && items.length === 0)) {
+          console.log(`   (엔드포인트: ${base.split('/').slice(-2).join('/')})`)
+          return Array.isArray(items) ? items[0] : items.item
+        }
+      } catch (e) {
+        console.error(`   시도 실패 [${base.split('/').pop()}${extra ? '+업체명' : ''}]: ${e.message}`)
+      }
     }
   }
   return null
