@@ -263,6 +263,43 @@ function CompetitorTable({ drug }) {
   )
 }
 
+const SALT_FORM_META = {
+  besylate:    { label: '베실산염', bg: '#f1f5f9', color: '#475569' },
+  maleate:     { label: '말레이트', bg: '#eff6ff', color: '#1d4ed8' },
+  's-amlodipine': { label: 'S형 (에스암로디핀)', bg: '#f0fdf4', color: '#166534' },
+}
+
+function saltFormFromName(name) {
+  const n = (name ?? '').toLowerCase()
+  if (n.includes('에스암로') || n.startsWith('에스')) return 's-amlodipine'
+  if (n.includes('말레')) return 'maleate'
+  if (n.includes('베실')) return 'besylate'
+  return null
+}
+
+function SaltBadge({ g }) {
+  const form = g.saltForm ?? saltFormFromName(g.productName ?? g.name)
+  if (!form) return null
+  const m = SALT_FORM_META[form]
+  if (!m) return null
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '1px 6px',
+      borderRadius: 8,
+      fontSize: 10,
+      fontWeight: 600,
+      background: m.bg,
+      color: m.color,
+      marginTop: 3,
+      flexShrink: 0,
+    }}>{m.label}</span>
+  )
+}
+
+// S형 specKey → 동등 용량 비교 기준 specKey
+const S_EQUIV = { 'S형-2.5mg': '5mg', 'S형-5mg': '10mg' }
+
 // ── 제네릭 테이블 ────────────────────────────────────────────
 function GenericTable({ drug }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
@@ -352,7 +389,10 @@ function GenericTable({ drug }) {
             >
               <option value="all">전체 규격</option>
               {specs.filter(s => s !== 'all').map(s => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s === 'S형-2.5mg' ? 'S형 2.5mg (암로디핀 5mg 상당)' :
+                   s === 'S형-5mg'   ? 'S형 5mg (암로디핀 10mg 상당)' : s}
+                </option>
               ))}
             </select>
           )}
@@ -425,7 +465,9 @@ function GenericTable({ drug }) {
                 </td>
               </tr>
             ) : displayRows.map((g, i) => {
-              const origPrice = g.specKey ? priceBySpec[g.specKey] : drug.prices[0]?.insurancePrice
+              const equivSpec = S_EQUIV[g.specKey]
+              const refSpec = equivSpec ?? g.specKey
+              const origPrice = refSpec ? priceBySpec[refSpec] : drug.prices[0]?.insurancePrice
               const saving = origPrice != null ? origPrice - g.insurancePrice : null
               const savingPct = (origPrice && saving != null) ? Math.round(Math.abs(saving) / origPrice * 100) : null
 
@@ -437,6 +479,7 @@ function GenericTable({ drug }) {
                       {g.name && g.name !== g.productName && (
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{g.name}</span>
                       )}
+                      <SaltBadge g={g} />
                     </div>
                   </Td>
                   <Td style={{ color: 'var(--text-secondary)' }}>{g.manufacturer}</Td>
@@ -453,7 +496,7 @@ function GenericTable({ drug }) {
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                            {drug.name} {g.specKey}: {fmt(origPrice)}
+                            {drug.name} {refSpec}{equivSpec ? ` (S형 ${g.specKey} 상당)` : ''}: {fmt(origPrice)}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{
