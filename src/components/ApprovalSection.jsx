@@ -30,20 +30,27 @@ function SectionCard({ title, icon, children, accentColor }) {
 
 function ListItems({ items, accentColor }) {
   return (
-    <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none' }}>
-      {items.map((item, i) => (
-        <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <span style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: accentColor,
-            marginTop: 6,
-            flexShrink: 0,
-          }} />
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{item}</span>
-        </li>
-      ))}
+    <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none' }}>
+      {items.map((item, i) => {
+        const isHeader = /^[①-⑳\d]+\.|^[가-힣]{1,8}$|^[◆◇■□▶▷●○★☆※]/.test(item)
+        return (
+          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start',
+            ...(isHeader ? { marginTop: 6 } : {}),
+          }}>
+            {isHeader ? (
+              <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.6 }}>{item}</span>
+            ) : (
+              <>
+                <span style={{
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: accentColor, marginTop: 7, flexShrink: 0,
+                }} />
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{item}</span>
+              </>
+            )}
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -108,20 +115,27 @@ function CautionsModal({ drug, onClose }) {
         </div>
 
         <div style={{ overflowY: 'auto', padding: '16px 20px' }}>
-          <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, listStyle: 'none' }}>
-            {(drug.cautions || []).map((item, i) => (
-              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                  marginTop: 6,
-                  flexShrink: 0,
-                }} />
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>{item}</span>
-              </li>
-            ))}
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none' }}>
+            {(drug.cautions || []).map((item, i) => {
+              const isHeader = /^[①-⑳\d]+\.|^[가-힣]{1,8}$|^[◆◇■□▶▷●○★☆※]/.test(item)
+              return (
+                <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start',
+                  ...(isHeader ? { marginTop: 8 } : {}),
+                }}>
+                  {isHeader ? (
+                    <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.7 }}>{item}</span>
+                  ) : (
+                    <>
+                      <span style={{
+                        width: 5, height: 5, borderRadius: '50%',
+                        background: '#ef4444', marginTop: 7, flexShrink: 0,
+                      }} />
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>{item}</span>
+                    </>
+                  )}
+                </li>
+              )
+            })}
           </ul>
           <div style={{
             marginTop: 16,
