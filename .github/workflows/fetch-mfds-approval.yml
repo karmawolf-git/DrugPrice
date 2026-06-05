@@ -2,48 +2,28 @@ name: 식약처 허가사항 원문 업데이트
 
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: '업데이트할 브랜치'
-        required: true
-        default: 'claude/funny-carson-keMRz'
+
+permissions:
+  contents: write
 
 jobs:
   fetch-and-update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 체크아웃
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: claude/funny-carson-keMRz
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Node.js 설정
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 식약처 API 데이터 조회
+      - name: 식약처 원문 조회 및 drugs.js 업데이트
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
-        run: node scripts/fetch-mfds-data.js
-
-      - name: 조회 결과 확인
-        run: |
-          echo "=== 조회 결과 ==="
-          cat scripts/mfds-drug-data.json | python3 -c "
-          import json, sys
-          data = json.load(sys.stdin)
-          for k, v in data.items():
-              if v:
-                  print(f'✅ {k}: {v[\"itemName\"]}')
-              else:
-                  print(f'❌ {k}: 데이터 없음')
-          "
-
-      - name: drugs.js 업데이트
-        run: node scripts/update-drugs-from-mfds.js
+        run: node scripts/fetch-and-update.js
 
       - name: 변경사항 커밋 & 푸시
         run: |
@@ -53,8 +33,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "변경사항 없음"
           else
-            git diff --cached --stat
             git commit -m "식약처 허가사항 원문 자동 업데이트 (data.go.kr API)"
-            git push origin ${{ github.event.inputs.branch }}
-            echo "✅ 푸시 완료"
+            git push origin claude/funny-carson-keMRz
+            echo "✅ 푸시 완료 — GitHub Pages 배포 시작"
           fi
