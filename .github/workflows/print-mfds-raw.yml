@@ -1,0 +1,21 @@
+name: 식약처 허가사항 원문 출력 (확인용)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  print-approval-text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/funny-carson-keMRz
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 식약처 원문 조회 및 출력
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: node scripts/print-mfds-raw.js
