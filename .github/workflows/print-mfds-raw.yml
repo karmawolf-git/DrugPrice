@@ -3,6 +3,9 @@ name: 식약처 허가사항 원문 출력 (확인용)
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   print-approval-text:
     runs-on: ubuntu-latest
