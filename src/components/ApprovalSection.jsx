@@ -1,6 +1,82 @@
 import React, { useState } from 'react'
 
-function SectionCard({ title, icon, children, accentColor }) {
+const TABS = [
+  { key: 'indications', label: '효능·효과', icon: '💊' },
+  { key: 'dosage',      label: '용법·용량', icon: '📏' },
+  { key: 'cautions',   label: '사용상 주의사항', icon: '⚠️' },
+]
+
+function TabContent({ items, accentColor, isCautions }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {items.map((item, i) => {
+        const trimmed = item.trim()
+        const isSectionHeader = /^(\d+\.|[①-⑳]|[가-힣]{1}\.)/u.test(trimmed)
+        const isSubHeader = /^[①-⑳\d]+\)|^\([①-⑳\d가-힣]\)|^[◆◇■□▶▷●○★☆※]/.test(trimmed)
+
+        if (isSectionHeader) {
+          return (
+            <div key={i} style={{
+              marginTop: i === 0 ? 0 : 14,
+              marginBottom: 4,
+              fontWeight: 700,
+              fontSize: 13,
+              color: isCautions ? '#b91c1c' : 'var(--text-primary)',
+              borderLeft: `3px solid ${isCautions ? '#ef4444' : accentColor}`,
+              paddingLeft: 8,
+              lineHeight: 1.5,
+            }}>
+              {trimmed}
+            </div>
+          )
+        }
+        if (isSubHeader) {
+          return (
+            <div key={i} style={{
+              marginTop: 6,
+              fontWeight: 600,
+              fontSize: 12,
+              color: 'var(--text-primary)',
+              paddingLeft: 4,
+              lineHeight: 1.6,
+            }}>
+              {trimmed}
+            </div>
+          )
+        }
+        return (
+          <div key={i} style={{
+            display: 'flex',
+            gap: 8,
+            alignItems: 'flex-start',
+            paddingLeft: 4,
+          }}>
+            <span style={{
+              width: 4, height: 4, borderRadius: '50%', flexShrink: 0,
+              background: isCautions ? '#ef4444' : accentColor,
+              marginTop: 7,
+            }} />
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+              {trimmed}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+export default function ApprovalSection({ drug }) {
+  const [activeTab, setActiveTab] = useState('indications')
+
+  const contentMap = {
+    indications: drug.indications,
+    dosage:      drug.dosage,
+    cautions:    drug.cautions,
+  }
+  const items = contentMap[activeTab] || []
+  const isCautions = activeTab === 'cautions'
+
   return (
     <div style={{
       background: 'var(--surface)',
@@ -9,6 +85,7 @@ function SectionCard({ title, icon, children, accentColor }) {
       boxShadow: 'var(--shadow-sm)',
       overflow: 'hidden',
     }}>
+      {/* Card header */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -17,250 +94,82 @@ function SectionCard({ title, icon, children, accentColor }) {
         borderBottom: '1px solid var(--border)',
         background: 'var(--surface-2)',
       }}>
-        <span style={{ fontSize: 16 }}>{icon}</span>
-        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{title}</span>
-        <div style={{ marginLeft: 'auto', width: 32, height: 3, borderRadius: 2, background: accentColor }} />
+        <span style={{ fontSize: 16 }}>📋</span>
+        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>허가사항</span>
+        <div style={{ marginLeft: 'auto', width: 32, height: 3, borderRadius: 2, background: drug.color }} />
       </div>
-      <div style={{ padding: '16px 20px' }}>
-        {children}
-      </div>
-    </div>
-  )
-}
 
-function ListItems({ items, accentColor }) {
-  return (
-    <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none' }}>
-      {items.map((item, i) => {
-        const isHeader = /^[①-⑳\d]+\.|^[가-힣]{1,8}$|^[◆◇■□▶▷●○★☆※]/.test(item)
-        return (
-          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start',
-            ...(isHeader ? { marginTop: 6 } : {}),
-          }}>
-            {isHeader ? (
-              <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.6 }}>{item}</span>
-            ) : (
-              <>
-                <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: accentColor, marginTop: 7, flexShrink: 0,
-                }} />
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{item}</span>
-              </>
-            )}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-function CautionsModal({ drug, onClose }) {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1000,
-        background: 'rgba(0,0,0,0.45)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-      }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
+      {/* Tab buttons */}
       <div style={{
-        background: 'var(--surface)',
-        borderRadius: 12,
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-        width: '100%',
-        maxWidth: 560,
-        maxHeight: '80vh',
         display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
+        gap: 0,
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface-2)',
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '14px 20px',
-          background: '#fef2f2',
-          borderBottom: '1px solid #fecaca',
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 18 }}>⚠️</span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#b91c1c' }}>주요 주의사항 및 금기</div>
-            <div style={{ fontSize: 11, color: '#ef4444', marginTop: 1 }}>{drug.name} ({drug.ingredient})</div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              marginLeft: 'auto',
-              background: 'none',
-              border: '1px solid #fecaca',
-              borderRadius: 6,
-              color: '#b91c1c',
-              cursor: 'pointer',
-              padding: '4px 10px',
-              fontSize: 12,
-              fontWeight: 600,
-              fontFamily: 'inherit',
-            }}
-          >
-            닫기
-          </button>
-        </div>
-
-        <div style={{ overflowY: 'auto', padding: '16px 20px' }}>
-          <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none' }}>
-            {(drug.cautions || []).map((item, i) => {
-              const isHeader = /^[①-⑳\d]+\.|^[가-힣]{1,8}$|^[◆◇■□▶▷●○★☆※]/.test(item)
-              return (
-                <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start',
-                  ...(isHeader ? { marginTop: 8 } : {}),
-                }}>
-                  {isHeader ? (
-                    <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.7 }}>{item}</span>
-                  ) : (
-                    <>
-                      <span style={{
-                        width: 5, height: 5, borderRadius: '50%',
-                        background: '#ef4444', marginTop: 7, flexShrink: 0,
-                      }} />
-                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>{item}</span>
-                    </>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-          <div style={{
-            marginTop: 16,
-            padding: '10px 14px',
-            background: 'var(--surface-2)',
-            borderRadius: 6,
-            border: '1px solid var(--border)',
-            fontSize: 11,
-            color: 'var(--text-muted)',
-            lineHeight: 1.7,
-          }}>
-            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>출처 안내</span><br />
-            본 주의사항은 AI 학습 데이터 기반으로 작성된 참고용 요약본입니다. 공식 허가사항 원문은 반드시 아래 공식 출처를 통해 확인하시기 바랍니다.<br />
-            · 식품의약품안전처 의약품통합정보시스템(DUR): <span style={{ fontFamily: 'monospace' }}>nedrug.mfds.go.kr</span><br />
-            · 건강보험심사평가원(HIRA): <span style={{ fontFamily: 'monospace' }}>www.hira.or.kr</span>
-          </div>
-        </div>
+        {TABS.map(tab => {
+          const active = activeTab === tab.key
+          const isWarn = tab.key === 'cautions'
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 5,
+                padding: '10px 8px',
+                background: active
+                  ? (isWarn ? '#fef2f2' : 'var(--surface)')
+                  : 'transparent',
+                border: 'none',
+                borderBottom: active
+                  ? `2px solid ${isWarn ? '#ef4444' : drug.color}`
+                  : '2px solid transparent',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'all 0.15s',
+              }}
+            >
+              <span style={{ fontSize: 13 }}>{tab.icon}</span>
+              <span style={{
+                fontSize: 12,
+                fontWeight: active ? 700 : 500,
+                color: active
+                  ? (isWarn ? '#b91c1c' : drug.color)
+                  : 'var(--text-muted)',
+                whiteSpace: 'nowrap',
+              }}>
+                {tab.label}
+              </span>
+            </button>
+          )
+        })}
       </div>
-    </div>
-  )
-}
 
-export default function ApprovalSection({ drug }) {
-  const [open, setOpen] = useState({ indications: true, dosage: true })
-  const [showCautions, setShowCautions] = useState(false)
-  const toggle = key => setOpen(prev => ({ ...prev, [key]: !prev[key] }))
+      {/* Content area */}
+      <div style={{ padding: '16px 20px', maxHeight: 480, overflowY: 'auto' }}>
+        {items.length > 0
+          ? <TabContent items={items} accentColor={drug.color} isCautions={isCautions} />
+          : <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>내용이 없습니다.</span>
+        }
+      </div>
 
-  return (
-    <>
-      <SectionCard title="허가사항" icon="📋" accentColor={drug.color}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Accordion
-            title="효능·효과"
-            open={open.indications}
-            onToggle={() => toggle('indications')}
-            color={drug.color}
-          >
-            <ListItems items={drug.indications} accentColor={drug.color} />
-          </Accordion>
-
-          <Accordion
-            title="용법·용량"
-            open={open.dosage}
-            onToggle={() => toggle('dosage')}
-            color={drug.color}
-          >
-            <ListItems items={drug.dosage} accentColor={drug.color} />
-          </Accordion>
-
-          <button
-            onClick={() => setShowCautions(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              background: '#fff5f5',
-              border: '1px solid #fecaca',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              width: '100%',
-              textAlign: 'left',
-            }}
-          >
-            <span style={{ fontSize: 14 }}>⚠️</span>
-            <span style={{ fontWeight: 600, fontSize: 13, color: '#b91c1c' }}>주요 주의사항 및 금기</span>
-            <span style={{ marginLeft: 'auto', fontSize: 11, color: '#ef4444', fontWeight: 600 }}>전체보기 ›</span>
-          </button>
-
-          <div style={{
-            fontSize: 10,
-            color: 'var(--text-muted)',
-            lineHeight: 1.6,
-            paddingTop: 4,
-            borderTop: '1px solid var(--border)',
-            marginTop: 4,
-          }}>
-            ※ 본 허가사항은 AI 학습 데이터 기반 참고용 요약본입니다. 공식 원문은{' '}
-            <span style={{ fontFamily: 'monospace' }}>nedrug.mfds.go.kr</span>{' '}
-            (식품의약품안전처 DUR)에서 확인하시기 바랍니다.
-          </div>
-        </div>
-      </SectionCard>
-
-      {showCautions && <CautionsModal drug={drug} onClose={() => setShowCautions(false)} />}
-    </>
-  )
-}
-
-function Accordion({ title, open, onToggle, color, children }) {
-  return (
-    <div style={{
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius-sm)',
-      overflow: 'hidden',
-      background: 'var(--surface-2)',
-    }}>
-      <button
-        onClick={onToggle}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '10px 14px',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          gap: 8,
-        }}
-      >
-        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{title}</span>
-        <span style={{
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s',
-        }}>▼</span>
-      </button>
-      {open && (
-        <div style={{ padding: '2px 14px 14px' }}>
-          {children}
-        </div>
-      )}
+      {/* Footer */}
+      <div style={{
+        padding: '10px 20px',
+        borderTop: '1px solid var(--border)',
+        fontSize: 10,
+        color: 'var(--text-muted)',
+        lineHeight: 1.6,
+        background: 'var(--surface-2)',
+      }}>
+        {isCautions
+          ? '※ 본 주의사항은 식약처 허가원문 기반입니다. 공식 원문은 nedrug.mfds.go.kr에서 확인하시기 바랍니다.'
+          : '※ 본 허가사항은 식약처 허가원문 기반 참고용입니다. 공식 원문은 nedrug.mfds.go.kr에서 확인하시기 바랍니다.'
+        }
+      </div>
     </div>
   )
 }
