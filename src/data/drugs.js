@@ -578,6 +578,7 @@ export const drugs = [
       { spec: '10mg',  insurancePrice: 476, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
+      { name: '헤르벤정 180mg', manufacturer: '에이치케이이노엔(주)', ingredient: '딜티아젬염산염', insurancePrice: 271, class: 'CCB(딜티아젬, 비DHP계)' },
       { name: '아달라트오로스정 30mg', manufacturer: '바이엘코리아(주)', ingredient: '니페디핀', insurancePrice: 313, class: 'CCB(니페디핀)' },
       { name: '딜라트렌정 25mg', manufacturer: '(주)종근당', ingredient: '카르베딜롤', insurancePrice: 404, class: '베타차단제+알파차단제' },
       { name: '트윈스타정 40/5mg', manufacturer: '한국베링거인겔하임(주)', ingredient: '텔미사르탄/암로디핀', insurancePrice: 697, class: 'ARB+CCB 복합제' },

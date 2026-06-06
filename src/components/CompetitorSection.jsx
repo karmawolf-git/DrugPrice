@@ -331,8 +331,13 @@ function GenericTable({ drug }) {
 
   const isSearching = filter.trim() !== ''
 
-  // 전체 HIRA DB (검색용)
-  const fullList = useMemo(() => allGenerics[drug.id] ?? [], [drug.id])
+  // 전체 HIRA DB (검색용) — 큐레이션 항목도 포함하여 검색 누락 방지
+  const fullList = useMemo(() => {
+    const hiList = allGenerics[drug.id] ?? []
+    const hiNames = new Set(hiList.map(g => g.productName))
+    const extra = drug.generics.filter(g => !hiNames.has(g.productName ?? g.name))
+    return [...extra, ...hiList]
+  }, [drug.id, drug.generics])
 
   // 전체 목록 (정렬+필터 적용)
   const allRows = useMemo(() => {
