@@ -114,31 +114,66 @@ function CompetitorTable({ drug }) {
   const [filter, setFilter] = useState('')
 
   const refPrice = drug.prices[0]?.insurancePrice ?? 0
-  const maxPrice = Math.max(...drug.competitors.map(c => c.insurancePrice), refPrice)
+  const isSearching = filter.trim() !== ''
+
+  // 검색용 전체 동일성분 목록 (allGenerics + drug.generics 합산)
+  const fullList = useMemo(() => {
+    const hiList = allGenerics[drug.id] ?? []
+    const hiNames = new Set(hiList.map(g => g.productName))
+    const extra = drug.generics.filter(g => !hiNames.has(g.productName ?? g.name))
+    return [...extra, ...hiList]
+  }, [drug.id, drug.generics])
 
   const toggleSort = key => setSort(prev =>
     prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
   )
 
   const rows = useMemo(() => {
-    let list = drug.competitors
-    if (filter.trim()) {
-      const q = filter.trim().toLowerCase()
-      list = list.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        c.manufacturer.toLowerCase().includes(q) ||
-        c.ingredient.toLowerCase().includes(q) ||
-        c.class.toLowerCase().includes(q)
-      )
+    const q = filter.trim().toLowerCase()
+    let list
+    if (q) {
+      // 검색 시: 경쟁품 + 동일성분 전체 DB 통합 검색
+      const competitorNames = new Set(drug.competitors.map(c => c.name))
+      const competitorRows = drug.competitors
+        .filter(c =>
+          c.name.toLowerCase().includes(q) ||
+          c.manufacturer.toLowerCase().includes(q) ||
+          (c.ingredient ?? '').toLowerCase().includes(q) ||
+          (c.class ?? '').toLowerCase().includes(q)
+        )
+        .map(c => ({ ...c, _source: 'competitor' }))
+
+      const genericRows = fullList
+        .filter(g => !competitorNames.has(g.productName ?? g.name))
+        .filter(g =>
+          (g.productName ?? g.name ?? '').toLowerCase().includes(q) ||
+          g.manufacturer.toLowerCase().includes(q) ||
+          (g.specKey ?? '').toLowerCase().includes(q)
+        )
+        .map(g => ({ ...g, _source: 'generic' }))
+
+      list = [...competitorRows, ...genericRows]
+    } else {
+      list = drug.competitors.map(c => ({ ...c, _source: 'competitor' }))
     }
+
     return [...list].sort((a, b) => {
-      let va = a[sort.key], vb = b[sort.key]
-      if (typeof va === 'string') va = va.toLowerCase(), vb = vb.toLowerCase()
+      const nameA = a.name ?? a.productName ?? ''
+      const nameB = b.name ?? b.productName ?? ''
+      let va = sort.key === 'name' ? nameA : a[sort.key]
+      let vb = sort.key === 'name' ? nameB : b[sort.key]
+      if (typeof va === 'string') va = va.toLowerCase(), vb = (vb ?? '').toLowerCase()
       if (va < vb) return sort.dir === 'asc' ? -1 : 1
       if (va > vb) return sort.dir === 'asc' ? 1 : -1
       return 0
     })
-  }, [drug.competitors, sort, filter])
+  }, [drug.competitors, fullList, sort, filter])
+
+  const maxPrice = Math.max(
+    ...rows.map(r => r.insurancePrice),
+    refPrice,
+    1,
+  )
 
   return (
     <TableSection
@@ -146,6 +181,7 @@ function CompetitorTable({ drug }) {
       icon="⚔️"
       color={drug.color}
       count={drug.competitors.length}
+      hint={isSearching ? undefined : '검색하면 동일성분 전체 제품을 조회할 수 있습니다'}
       controls={
         <input
           value={filter}
@@ -163,29 +199,44 @@ function CompetitorTable({ drug }) {
         />
       }
     >
+      {/* 상태 배너 */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: 8,
         padding: '8px 14px',
-        background: drug.lightColor,
-        borderBottom: `1px solid ${drug.color}22`,
+        background: isSearching ? '#eff6ff' : drug.lightColor,
+        borderBottom: `1px solid ${isSearching ? '#bfdbfe' : drug.color + '22'}`,
         fontSize: 12,
-        color: drug.color,
+        color: isSearching ? '#1d4ed8' : drug.color,
+        flexWrap: 'wrap',
       }}>
-        <span>📌</span>
-        <span>
-          비교 기준: <strong>{drug.name} {drug.prices[0]?.spec}</strong>{' '}
-          보험급여가 <strong>{fmt(refPrice)}</strong> (최저 규격)
-        </span>
+        {isSearching ? (
+          <>
+            <span>🔍</span>
+            <span>
+              동일성분 전체 {fullList.length + drug.competitors.length}품목 중{' '}
+              <strong>{rows.length}개</strong> 검색됨
+            </span>
+          </>
+        ) : (
+          <>
+            <span>📌</span>
+            <span>
+              비교 기준: <strong>{drug.name} {drug.prices[0]?.spec}</strong>{' '}
+              보험급여가 <strong>{fmt(refPrice)}</strong> (최저 규격)
+            </span>
+          </>
+        )}
       </div>
+
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--surface-2)', borderBottom: '2px solid var(--border)' }}>
               <Th sortKey="name" currentSort={sort} onSort={toggleSort}>제품명</Th>
               <Th sortKey="manufacturer" currentSort={sort} onSort={toggleSort}>제조사</Th>
-              <Th>성분명</Th>
+              <Th>성분/규격</Th>
               <Th sortKey="class" currentSort={sort} onSort={toggleSort}>약효 분류</Th>
               <Th sortKey="insurancePrice" currentSort={sort} onSort={toggleSort}>보험급여가</Th>
               <Th>우리 제품 대비</Th>
@@ -200,13 +251,30 @@ function CompetitorTable({ drug }) {
                 </td>
               </tr>
             ) : rows.map((c, i) => {
+              const displayName = c.name ?? c.productName
+              const displayIngredient = c.ingredient ?? c.specKey ?? '-'
+              const displayClass = c.class ?? null
               const diff = c.insurancePrice - refPrice
               const diffPct = refPrice ? ((Math.abs(diff) / refPrice) * 100).toFixed(0) : 0
               const isHigher = diff > 0
               const isSame = diff === 0
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
-                  <Td><span style={{ fontWeight: 600 }}>{c.name}</span></Td>
+                  <Td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontWeight: 600 }}>{displayName}</span>
+                      {c._source === 'generic' && (
+                        <span style={{
+                          fontSize: 10,
+                          padding: '1px 6px',
+                          borderRadius: 8,
+                          background: '#f0fdf4',
+                          color: '#166534',
+                          alignSelf: 'flex-start',
+                        }}>제네릭</span>
+                      )}
+                    </div>
+                  </Td>
                   <Td style={{ color: 'var(--text-secondary)' }}>{c.manufacturer}</Td>
                   <Td>
                     <span style={{
@@ -216,9 +284,9 @@ function CompetitorTable({ drug }) {
                       borderRadius: 10,
                       fontSize: 11,
                       color: 'var(--text-secondary)',
-                    }}>{c.ingredient}</span>
+                    }}>{displayIngredient}</span>
                   </Td>
-                  <Td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{c.class}</Td>
+                  <Td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{displayClass ?? '-'}</Td>
                   <Td>
                     <span style={{
                       fontWeight: 700,
