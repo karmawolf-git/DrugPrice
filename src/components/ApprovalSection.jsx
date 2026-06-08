@@ -11,7 +11,7 @@ function TabContent({ items, accentColor, isCautions }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {items.map((item, i) => {
         const trimmed = item.trim()
-        const isSectionHeader = /^(\d+\.|[①-⑳]|[가-힣]{1}\.)/u.test(trimmed)
+        const isSectionHeader = /^(\d+\.|[①-⑳]|[가-힣]{1}\.)/u.test(trimmed) && trimmed.length <= 60
         const isSubHeader = /^[①-⑳\d]+\)|^\([①-⑳\d가-힣]\)|^[◆◇■□▶▷●○★☆※]/.test(trimmed)
 
         if (isSectionHeader) {
