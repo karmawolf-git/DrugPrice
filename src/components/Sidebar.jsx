@@ -21,9 +21,9 @@ export default function Sidebar({ drugs, selectedId, onSelect }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 22 }}>💊</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.2 }}>약가 대시보드</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.2 }}>Drug Information</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>
-              허가사항 · 용법용량<br />주의사항 · 급여 기준
+              허가사항 · 급여기준 · 경쟁품 검색
             </div>
           </div>
         </div>
