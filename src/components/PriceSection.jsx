@@ -5,9 +5,9 @@ function fmt(n) {
 }
 
 function PrescriptionCost({ insurancePrice }) {
-  const days = [30, 90]
+  const days = [30, 90, 120]
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
+    <div style={{ display: 'flex', gap: 5 }}>
       {days.map(d => {
         const total = insurancePrice * d
         const copay = Math.round(total * 0.2)
@@ -15,23 +15,23 @@ function PrescriptionCost({ insurancePrice }) {
           <div key={d} style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 3,
-            padding: '6px 10px',
+            gap: 2,
+            padding: '4px 7px',
             background: 'var(--surface-2)',
-            borderRadius: 6,
+            borderRadius: 5,
             border: '1px solid var(--border)',
-            minWidth: 90,
+            minWidth: 76,
           }}>
             <span style={{
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: 700,
               color: 'var(--text-muted)',
-              letterSpacing: '0.03em',
+              letterSpacing: '0.02em',
             }}>{d}일 처방</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>
               {fmt(total)}
             </span>
-            <span style={{ fontSize: 11, color: '#059669' }}>
+            <span style={{ fontSize: 10, color: '#059669' }}>
               본인부담 {fmt(copay)}
             </span>
           </div>
@@ -106,7 +106,7 @@ export default function PriceSection({ drug }) {
               <Th>보험급여가</Th>
               <Th>환자 본인부담</Th>
               <Th>급여율</Th>
-              <Th style={{ minWidth: 220 }}>처방기간별 비용</Th>
+              <Th style={{ minWidth: 260 }}>처방기간별 비용</Th>
             </tr>
           </thead>
           <tbody>
@@ -148,7 +148,7 @@ export default function PriceSection({ drug }) {
                       fontWeight: 600,
                     }}>{p.reimbursementRate}</span>
                   </Td>
-                  <Td style={{ minWidth: 220 }}>
+                  <Td style={{ minWidth: 260 }}>
                     <PrescriptionCost insurancePrice={p.insurancePrice} />
                   </Td>
                 </tr>
