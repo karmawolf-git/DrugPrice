@@ -4,33 +4,70 @@ function fmt(n) {
   return n.toLocaleString('ko-KR') + '원'
 }
 
-function PriceBar({ value, max, color }) {
-  const pct = Math.round((value / max) * 100)
+function PrescriptionCost({ insurancePrice }) {
+  const days = [30, 90]
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{
-        flex: 1,
-        height: 8,
-        background: '#f1f5f9',
-        borderRadius: 4,
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          width: `${pct}%`,
-          height: '100%',
-          background: color,
-          borderRadius: 4,
-          transition: 'width 0.5s ease',
-        }} />
-      </div>
-      <span style={{ fontSize: 11, color: 'var(--text-muted)', width: 30, textAlign: 'right' }}>{pct}%</span>
+    <div style={{ display: 'flex', gap: 8 }}>
+      {days.map(d => {
+        const total = insurancePrice * d
+        const copay = Math.round(total * 0.2)
+        return (
+          <div key={d} style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+            padding: '6px 10px',
+            background: 'var(--surface-2)',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+            minWidth: 90,
+          }}>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              letterSpacing: '0.03em',
+            }}>{d}일 처방</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+              {fmt(total)}
+            </span>
+            <span style={{ fontSize: 11, color: '#059669' }}>
+              본인부담 {fmt(copay)}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-export default function PriceSection({ drug }) {
-  const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice))
+function Th({ children, style }) {
+  return (
+    <th style={{
+      padding: '10px 16px',
+      textAlign: 'left',
+      fontSize: 12,
+      fontWeight: 600,
+      color: 'var(--text-secondary)',
+      whiteSpace: 'nowrap',
+      ...style,
+    }}>{children}</th>
+  )
+}
 
+function Td({ children, style }) {
+  return (
+    <td style={{
+      padding: '12px 16px',
+      fontSize: 13,
+      color: 'var(--text-primary)',
+      whiteSpace: 'nowrap',
+      ...style,
+    }}>{children}</td>
+  )
+}
+
+export default function PriceSection({ drug }) {
   return (
     <div style={{
       background: 'var(--surface)',
@@ -69,7 +106,7 @@ export default function PriceSection({ drug }) {
               <Th>보험급여가</Th>
               <Th>환자 본인부담</Th>
               <Th>급여율</Th>
-              <Th style={{ minWidth: 160 }}>가격 비율</Th>
+              <Th style={{ minWidth: 220 }}>처방기간별 비용</Th>
             </tr>
           </thead>
           <tbody>
@@ -111,8 +148,8 @@ export default function PriceSection({ drug }) {
                       fontWeight: 600,
                     }}>{p.reimbursementRate}</span>
                   </Td>
-                  <Td style={{ minWidth: 160 }}>
-                    <PriceBar value={p.insurancePrice} max={maxPrice} color={drug.color} />
+                  <Td style={{ minWidth: 220 }}>
+                    <PrescriptionCost insurancePrice={p.insurancePrice} />
                   </Td>
                 </tr>
               )
@@ -132,36 +169,10 @@ export default function PriceSection({ drug }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 13 }}>ℹ️</span>
           <span style={{ fontSize: 12, color: '#92400e' }}>
-            보험급여가는 건강보험이 적용되는 공식 상한 금액입니다. 환자 본인부담금은 일반 외래 기준 20%이며, 의료기관 종별·질환에 따라 다를 수 있습니다.
+            처방기간별 비용은 1일 1정 기준 참고값입니다. 환자 본인부담금은 일반 외래 기준 20%이며, 의료기관 종별·질환에 따라 다를 수 있습니다.
           </span>
         </div>
       </div>
     </div>
-  )
-}
-
-function Th({ children, style }) {
-  return (
-    <th style={{
-      padding: '10px 16px',
-      textAlign: 'left',
-      fontSize: 12,
-      fontWeight: 600,
-      color: 'var(--text-secondary)',
-      whiteSpace: 'nowrap',
-      ...style,
-    }}>{children}</th>
-  )
-}
-
-function Td({ children, style }) {
-  return (
-    <td style={{
-      padding: '12px 16px',
-      fontSize: 13,
-      color: 'var(--text-primary)',
-      whiteSpace: 'nowrap',
-      ...style,
-    }}>{children}</td>
   )
 }
