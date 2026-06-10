@@ -67,7 +67,20 @@ function Td({ children, style }) {
   )
 }
 
+function MiniPriceBar({ value, max, color }) {
+  const pct = Math.round((value / max) * 100)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+      <div style={{ width: 64, height: 4, background: '#f1f5f9', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 2 }} />
+      </div>
+      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{pct}%</span>
+    </div>
+  )
+}
+
 export default function PriceSection({ drug }) {
+  const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice))
   return (
     <div style={{
       background: 'var(--surface)',
@@ -129,10 +142,13 @@ export default function PriceSection({ drug }) {
                     }}>{p.spec}</span>
                   </Td>
                   <Td>
-                    <span style={{ fontWeight: 700, color: drug.color, fontSize: 15 }}>
-                      {fmt(p.insurancePrice)}
-                    </span>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>/{p.unit}</span>
+                    <div>
+                      <span style={{ fontWeight: 700, color: drug.color, fontSize: 15 }}>
+                        {fmt(p.insurancePrice)}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>/{p.unit}</span>
+                    </div>
+                    <MiniPriceBar value={p.insurancePrice} max={maxPrice} color={drug.color} />
                   </Td>
                   <Td>
                     <span style={{ color: '#059669', fontWeight: 600 }}>{fmt(copay)}</span>
