@@ -295,11 +295,16 @@ export const drugs = [
       { spec: '80mg', insurancePrice: 1511, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
+      { name: '크레스토정 5mg',  manufacturer: '한국아스트라제네카(주)', ingredient: '로수바스타틴 칼슘', insurancePrice: 521, class: '스타틴(로수바스타틴)' },
       { name: '크레스토정 10mg', manufacturer: '한국아스트라제네카(주)', ingredient: '로수바스타틴 칼슘', insurancePrice: 602, class: '스타틴(로수바스타틴)' },
       { name: '크레스토정 20mg', manufacturer: '한국아스트라제네카(주)', ingredient: '로수바스타틴 칼슘', insurancePrice: 675, class: '스타틴(로수바스타틴)' },
       { name: '바이토린정 10/20mg', manufacturer: '한국오가논(주)', ingredient: '에제티미브/심바스타틴', insurancePrice: 1087, class: '스타틴+콜레스테롤흡수억제제' },
       { name: '아토젯정 10/10mg', manufacturer: '한국오가논(주)', ingredient: '에제티미브/아토르바스타틴', insurancePrice: 918, class: '스타틴+콜레스테롤흡수억제제' },
+      { name: '리바로정 1mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴 칼슘', insurancePrice: 332, class: '스타틴(피타바스타틴)' },
       { name: '리바로정 2mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴 칼슘', insurancePrice: 547, class: '스타틴(피타바스타틴)' },
+      { name: '리바로정 4mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴 칼슘', insurancePrice: 867, class: '스타틴(피타바스타틴)' },
+      { name: '메바로친정 10mg', manufacturer: '에이치케이이노엔(주)', ingredient: '프라바스타틴 나트륨', insurancePrice: 295, class: '스타틴(프라바스타틴)' },
+      { name: '메바로친정 20mg', manufacturer: '에이치케이이노엔(주)', ingredient: '프라바스타틴 나트륨', insurancePrice: 457, class: '스타틴(프라바스타틴)' },
       { name: '메바로친정 40mg', manufacturer: '에이치케이이노엔(주)', ingredient: '프라바스타틴 나트륨', insurancePrice: 704, class: '스타틴(프라바스타틴)' },
     ],
     generics: [
