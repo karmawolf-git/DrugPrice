@@ -23,7 +23,7 @@ export default function Sidebar({ drugs, selectedId, onSelect }) {
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.2 }}>Drug Information</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>
-              허가사항 · 급여기준 · 경쟁품 검색
+              허가사항 · 급여기준 · 제품 검색
             </div>
           </div>
         </div>
