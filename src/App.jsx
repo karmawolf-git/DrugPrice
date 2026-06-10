@@ -48,7 +48,7 @@ export default function App() {
           <ReimbursementSection drug={drug} onShowDiag={() => setDiagDrug(drug)} />
         </div>
 
-        <CompetitorSection key={drug.id} drug={drug} />
+        <CompetitorSection key={drug.id} drug={drug} allDrugs={drugs} />
 
         <footer style={{
           textAlign: 'center',

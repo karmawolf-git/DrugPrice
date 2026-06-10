@@ -109,7 +109,7 @@ function Td({ children, style }) {
 }
 
 // ── 경쟁품 테이블 ────────────────────────────────────────────
-function CompetitorTable({ drug }) {
+function CompetitorTable({ drug, allDrugs }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
 
@@ -124,6 +124,22 @@ function CompetitorTable({ drug }) {
     return [...extra, ...hiList]
   }, [drug.id, drug.generics])
 
+  // 전체 drugs에서 스타틴 계열 경쟁품 수집 (현재 약품 competitors 중복 제외)
+  const statinPool = useMemo(() => {
+    const ownNames = new Set(drug.competitors.map(c => c.name))
+    const seen = new Set(ownNames)
+    const result = []
+    for (const d of (allDrugs ?? [])) {
+      for (const c of d.competitors) {
+        if ((c.class ?? '').includes('스타틴') && !seen.has(c.name)) {
+          seen.add(c.name)
+          result.push({ ...c, _statinDrug: d.name })
+        }
+      }
+    }
+    return result
+  }, [allDrugs, drug.competitors])
+
   const toggleSort = key => setSort(prev =>
     prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
   )
@@ -132,7 +148,7 @@ function CompetitorTable({ drug }) {
     const q = filter.trim().toLowerCase()
     let list
     if (q) {
-      // 검색 시: 경쟁품 + 동일성분 전체 DB 통합 검색
+      // 검색 시: 경쟁품 + 동일성분 전체 DB + 스타틴 계열 통합 검색
       const competitorNames = new Set(drug.competitors.map(c => c.name))
       const competitorRows = drug.competitors
         .filter(c =>
@@ -152,7 +168,16 @@ function CompetitorTable({ drug }) {
         )
         .map(g => ({ ...g, _source: 'generic' }))
 
-      list = [...competitorRows, ...genericRows]
+      const statinRows = statinPool
+        .filter(c =>
+          c.name.toLowerCase().includes(q) ||
+          c.manufacturer.toLowerCase().includes(q) ||
+          (c.ingredient ?? '').toLowerCase().includes(q) ||
+          (c.class ?? '').toLowerCase().includes(q)
+        )
+        .map(c => ({ ...c, _source: 'statin' }))
+
+      list = [...competitorRows, ...genericRows, ...statinRows]
     } else {
       list = drug.competitors.map(c => ({ ...c, _source: 'competitor' }))
     }
@@ -215,7 +240,8 @@ function CompetitorTable({ drug }) {
           <>
             <span>🔍</span>
             <span>
-              동일성분 전체 {fullList.length + drug.competitors.length}품목 중{' '}
+              경쟁품·동일성분·스타틴 계열 전체{' '}
+              {drug.competitors.length + fullList.length + statinPool.length}품목 중{' '}
               <strong>{rows.length}개</strong> 검색됨
             </span>
           </>
@@ -272,6 +298,16 @@ function CompetitorTable({ drug }) {
                           color: '#166534',
                           alignSelf: 'flex-start',
                         }}>제네릭</span>
+                      )}
+                      {c._source === 'statin' && (
+                        <span style={{
+                          fontSize: 10,
+                          padding: '1px 6px',
+                          borderRadius: 8,
+                          background: '#fef9c3',
+                          color: '#854d0e',
+                          alignSelf: 'flex-start',
+                        }}>스타틴 계열</span>
                       )}
                     </div>
                   </Td>
@@ -635,10 +671,10 @@ function GenericTable({ drug }) {
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────
-export default function CompetitorSection({ drug }) {
+export default function CompetitorSection({ drug, allDrugs }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <CompetitorTable drug={drug} />
+      <CompetitorTable drug={drug} allDrugs={allDrugs} />
       <GenericTable drug={drug} />
     </div>
   )
