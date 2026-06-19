@@ -32,6 +32,12 @@ jobs:
 
       - run: npm ci
 
+      - name: HIRA API 약가 최신화
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: node scripts/fetch-hira-prices.js
+        continue-on-error: true
+
       - run: npm run build
 
       - uses: actions/upload-pages-artifact@v3

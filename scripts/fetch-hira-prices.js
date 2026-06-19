@@ -361,8 +361,19 @@ async function main() {
 
   fs.writeFileSync('./src/data/drugs.js', drugsSrc, 'utf-8')
 
+  // ── Step 6: apiMeta.js 타임스탬프 기록
+  const now = new Date().toISOString()
+  const metaContent = `// 자동 생성 — fetch-hira-prices.js
+export const apiMeta = {
+  lastFetched: '${now}',
+  source: '건강보험심사평가원 (HIRA)',
+  apiEndpoint: 'msInsItemPriceInfoService',
+}
+`
+  fs.writeFileSync('./src/data/apiMeta.js', metaContent, 'utf-8')
+
   console.log('\n✅ 완료')
-  console.log('   allGenerics.js, drugs.js 업데이트됨')
+  console.log('   allGenerics.js, drugs.js, apiMeta.js 업데이트됨')
   console.log('   git diff src/data/ 로 변경사항 확인 후 커밋하세요')
 }
 

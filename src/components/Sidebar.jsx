@@ -1,4 +1,17 @@
 import React from 'react'
+import { apiMeta } from '../data/apiMeta'
+
+function formatFetched(iso) {
+  if (!iso) return null
+  const d = new Date(iso)
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+  const yy = kst.getUTCFullYear()
+  const mm = String(kst.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(kst.getUTCDate()).padStart(2, '0')
+  const hh = String(kst.getUTCHours()).padStart(2, '0')
+  const mi = String(kst.getUTCMinutes()).padStart(2, '0')
+  return `${yy}.${mm}.${dd} ${hh}:${mi}`
+}
 
 export default function Sidebar({ drugs, selectedId, onSelect }) {
   return (
@@ -88,9 +101,27 @@ export default function Sidebar({ drugs, selectedId, onSelect }) {
           </div>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          <div style={{ fontWeight: 600, marginBottom: 2 }}>데이터 기준</div>
-          <div>건강보험심사평가원</div>
-          <div>기준일: 2026년 6월 1일</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+              padding: '1px 6px', borderRadius: 10,
+              background: apiMeta.lastFetched ? '#dcfce7' : '#f1f5f9',
+              color: apiMeta.lastFetched ? '#15803d' : '#64748b',
+            }}>
+              <span style={{
+                width: 5, height: 5, borderRadius: '50%',
+                background: apiMeta.lastFetched ? '#22c55e' : '#94a3b8',
+                display: 'inline-block',
+              }} />
+              {apiMeta.lastFetched ? 'API 연동' : '정적 데이터'}
+            </span>
+          </div>
+          <div style={{ fontWeight: 600, marginBottom: 1 }}>{apiMeta.source}</div>
+          {apiMeta.lastFetched
+            ? <div>갱신: {formatFetched(apiMeta.lastFetched)} KST</div>
+            : <div>기준일: 2026년 6월 1일</div>
+          }
         </div>
       </div>
     </aside>
