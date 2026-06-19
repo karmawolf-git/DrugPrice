@@ -213,8 +213,11 @@ async function main() {
         pageNo: '1',
         ediCode: brandEdi,
       })
-      const { status, json } = await fetchJson(url)
-      if (status !== 200 || !json) continue
+      const { status, json, raw } = await fetchJson(url)
+      if (status !== 200 || !json) {
+        console.warn(`  ⚠️  ${drugId} ${specKey} (${brandEdi}): HTTP ${status} — ${(raw ?? '').slice(0, 150)}`)
+        continue
+      }
 
       const rawItems = json?.response?.body?.items?.item ?? json?.body?.items?.item
       const item = Array.isArray(rawItems) ? rawItems[0] : rawItems
