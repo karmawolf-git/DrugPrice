@@ -113,8 +113,13 @@ async function fetchByIngCode(ingCode) {
     pageNo: '1',
     ingrCode: ingCode,
   })
-  const { status, json } = await fetchJson(url)
-  if (status !== 200 || !json) return null
+  const { status, json, raw } = await fetchJson(url)
+  if (status !== 200 || !json) {
+    if (ingCode === Object.keys(ING_CODE_MAP)[0]) {
+      console.warn(`  첫 번째 조회 HTTP ${status}: ${(raw ?? '').slice(0, 300)}`)
+    }
+    return null
+  }
 
   const totalCount = json?.response?.body?.totalCount
     ?? json?.body?.totalCount
@@ -134,7 +139,7 @@ async function fetchByIngCode(ingCode) {
 // ─────────────────────────────────────────────────────────────────────────────
 async function fetchAllPrices() {
   console.log('  전체 약가 데이터 페이지 순회 시작...')
-  const PAGE_SIZE = 1000
+  const PAGE_SIZE = 100
   let pageNo = 1
   let totalFetched = 0
   let totalCount = null
@@ -147,9 +152,10 @@ async function fetchAllPrices() {
       numOfRows: String(PAGE_SIZE),
       pageNo: String(pageNo),
     })
-    const { status, json } = await fetchJson(url)
+    const { status, json, raw } = await fetchJson(url)
     if (status !== 200 || !json) {
       console.warn(`  ⚠️  페이지 ${pageNo} 조회 실패 (HTTP ${status})`)
+      console.warn(`  응답 내용: ${(raw ?? '').slice(0, 400)}`)
       break
     }
 

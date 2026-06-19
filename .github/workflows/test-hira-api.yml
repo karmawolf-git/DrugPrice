@@ -1,0 +1,24 @@
+name: HIRA API 연결 테스트
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/funny-carson-keMRz
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: HIRA API 연결 테스트
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: node scripts/test-hira-api.js
