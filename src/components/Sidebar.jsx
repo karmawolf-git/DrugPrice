@@ -73,6 +73,20 @@ export default function Sidebar({ drugs, selectedId, onSelect }) {
       ))}
 
       <div style={{ marginTop: 'auto', padding: '12px 10px 4px', borderTop: '1px solid var(--border)' }}>
+        <div style={{
+          marginBottom: 8,
+          padding: '4px 8px',
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: 4,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: '#991b1b', letterSpacing: '0.04em' }}>
+            INTERNAL USE ONLY
+          </div>
+          <div style={{ fontSize: 9, color: '#b91c1c', marginTop: 1 }}>
+            외부 유출 금지
+          </div>
+        </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
           <div style={{ fontWeight: 600, marginBottom: 2 }}>데이터 기준</div>
           <div>건강보험심사평가원</div>
