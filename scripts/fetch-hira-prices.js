@@ -102,81 +102,50 @@ function sleep(ms) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 전략 1: 성분코드(ingCode)로 조회 — getMsInsItemPriceInfo?ingrCode=...
-// HIRA API가 ingrCode 파라미터를 지원하면 약품별 1회 호출로 완료
+// 전략 1: 성분코드(ingCode)로 페이지 조회 (numOfRows=10, 페이지네이션)
+// API numOfRows 한도가 ~10건으로 제한되어 있어 여러 페이지 조회
 // ─────────────────────────────────────────────────────────────────────────────
 async function fetchByIngCode(ingCode) {
-  const url = buildUrl('getMsInsItemPriceInfo', {
-    serviceKey: SERVICE_KEY,
-    type: 'json',
-    numOfRows: '999',
-    pageNo: '1',
-    ingrCode: ingCode,
-  })
-  const { status, json, raw } = await fetchJson(url)
-  if (status !== 200 || !json) {
-    if (ingCode === Object.keys(ING_CODE_MAP)[0]) {
-      console.warn(`  첫 번째 조회 HTTP ${status}: ${(raw ?? '').slice(0, 300)}`)
-    }
-    return null
-  }
-
-  const totalCount = json?.response?.body?.totalCount
-    ?? json?.body?.totalCount
-    ?? 0
-  if (totalCount === 0) return null
-
-  const rawItems = json?.response?.body?.items?.item
-    ?? json?.body?.items?.item
-    ?? []
-  return Array.isArray(rawItems) ? rawItems : [rawItems]
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 전략 2: 전체 페이지 순회 — 성분코드 파라미터 미지원 시 대체 전략
-// 전체 21,000+건을 1,000건씩 조회하여 성분코드로 필터링
-// 참고: API 응답에 성분코드가 없으면 아래 filterByIngCode 함수가 사용됨
-// ─────────────────────────────────────────────────────────────────────────────
-async function fetchAllPrices() {
-  console.log('  전체 약가 데이터 페이지 순회 시작...')
-  const PAGE_SIZE = 100
+  const PAGE = 10
   let pageNo = 1
-  let totalFetched = 0
   let totalCount = null
   const allItems = []
+  let firstError = null
 
   while (true) {
     const url = buildUrl('getMsInsItemPriceInfo', {
       serviceKey: SERVICE_KEY,
       type: 'json',
-      numOfRows: String(PAGE_SIZE),
+      numOfRows: String(PAGE),
       pageNo: String(pageNo),
+      ingrCode: ingCode,
     })
     const { status, json, raw } = await fetchJson(url)
     if (status !== 200 || !json) {
-      console.warn(`  ⚠️  페이지 ${pageNo} 조회 실패 (HTTP ${status})`)
-      console.warn(`  응답 내용: ${(raw ?? '').slice(0, 400)}`)
+      if (!firstError) firstError = `HTTP ${status}: ${(raw ?? '').slice(0, 200)}`
       break
     }
 
     const body = json?.response?.body ?? json?.body
-    if (totalCount === null) {
-      totalCount = body?.totalCount ?? 0
-      console.log(`  총 ${totalCount.toLocaleString()}건`)
-    }
+    if (totalCount === null) totalCount = body?.totalCount ?? 0
+    if (totalCount === 0) break
 
     const rawItems = body?.items?.item ?? []
     const items = Array.isArray(rawItems) ? rawItems : (rawItems ? [rawItems] : [])
     allItems.push(...items)
-    totalFetched += items.length
-    process.stdout.write(`\r  ${totalFetched.toLocaleString()} / ${totalCount.toLocaleString()} 건 조회 중...`)
 
-    if (totalFetched >= totalCount || items.length === 0) break
+    if (allItems.length >= totalCount || items.length === 0) break
     pageNo++
-    await sleep(300) // API 부하 방지
+    await sleep(150)
   }
-  console.log()
-  return allItems
+
+  if (firstError && allItems.length === 0) {
+    if (ingCode === Object.keys(ING_CODE_MAP)[0]) {
+      console.warn(`  첫 번째 조회 실패: ${firstError}`)
+    }
+    return null
+  }
+  return allItems.length > 0 ? allItems : null
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -207,58 +176,34 @@ async function main() {
     brandPrices[drugId] = {}
   }
 
-  // ── Step 1: 전략 1 시도 (성분코드 파라미터)
-  console.log('■ 전략 1: 성분코드 직접 조회')
-  const strategy1Results = {}   // ingCode → items[]
-  let strategy1Works = false
+  // ── Step 1: 성분코드 직접 조회 (페이지당 10건, 페이지네이션)
+  console.log('■ 전략 1: 성분코드 직접 조회 (numOfRows=10)')
+  let genericsFetched = 0
 
   for (const ingCode of Object.keys(ING_CODE_MAP)) {
     const items = await fetchByIngCode(ingCode)
-    if (items && items.length > 0) {
-      strategy1Results[ingCode] = items
-      strategy1Works = true
+    if (!items || items.length === 0) continue
+
+    const { drugId, specKey } = ING_CODE_MAP[ingCode]
+    for (const raw of items) {
+      const { productName, manufacturer, price } = parseItem(raw)
+      if (!productName || !price) continue
+      generics[drugId].push({ productName, manufacturer, specKey, insurancePrice: price })
+      genericsFetched++
     }
+    console.log(`  ${drugId} ${specKey}: ${items.length}건`)
     await sleep(100)
   }
 
-  if (strategy1Works) {
-    console.log('  ✅ 성분코드 파라미터 지원 확인')
-    for (const [ingCode, items] of Object.entries(strategy1Results)) {
-      const { drugId, specKey } = ING_CODE_MAP[ingCode]
-      for (const raw of items) {
-        const { productName, manufacturer, price } = parseItem(raw)
-        if (!productName || !price) continue
-        generics[drugId].push({ productName, manufacturer, specKey, insurancePrice: price })
-      }
-      console.log(`  ${drugId} ${specKey}: ${items.length}건`)
-    }
+  if (genericsFetched === 0) {
+    console.warn('  ⚠️  성분코드 조회 결과 없음 — 제네릭 데이터는 기존 유지')
   } else {
-    console.log('  ℹ️  성분코드 파라미터 미지원 → 전략 2(전체 순회)로 전환')
-
-    // ── Step 2: 전체 데이터 다운로드 + 필터링
-    console.log('\n■ 전략 2: 전체 데이터 순회')
-    const allItems = await fetchAllPrices()
-    let matched = 0
-
-    for (const raw of allItems) {
-      const { productName, manufacturer, price, ingCode } = parseItem(raw)
-      if (!ingCode || !ING_CODE_MAP[ingCode]) continue
-
-      const { drugId, specKey } = ING_CODE_MAP[ingCode]
-      generics[drugId].push({ productName, manufacturer, specKey, insurancePrice: price })
-      matched++
-    }
-
-    if (matched === 0) {
-      console.error('❌ 전략 2도 실패 — API 응답에 성분코드(ingCode/classEsntlCode) 필드 없음')
-      console.error('   API 응답 샘플을 확인하고 parseItem() 함수의 필드명을 조정하세요')
-      process.exit(1)
-    }
-    console.log(`  ✅ ${matched}건 매칭`)
+    console.log(`  ✅ 총 ${genericsFetched}건 제네릭 조회 완료`)
   }
 
-  // ── Step 3: 브랜드 약품 가격 조회 (EDI 코드로 정확히 조회)
-  console.log('\n■ 브랜드 약가 조회')
+  // ── Step 3: 브랜드 약가 조회 (EDI 코드, numOfRows=1 → 안정적)
+  console.log('\n■ 브랜드 약가 조회 (EDI 코드)')
+  let brandFetched = 0
   for (const [drugId, specs] of Object.entries(DRUG_CONFIGS)) {
     for (const { specKey, brandEdi } of specs) {
       const url = buildUrl('getMsInsItemPriceInfo', {
@@ -278,10 +223,15 @@ async function main() {
       const { price } = parseItem(item)
       if (price) {
         brandPrices[drugId][specKey] = price
+        brandFetched++
         console.log(`  ${drugId} ${specKey}: ${price.toLocaleString()}원`)
       }
       await sleep(100)
     }
+  }
+  if (brandFetched === 0) {
+    console.error('❌ 브랜드 약가 조회 실패 — API 응답 없음')
+    process.exit(1)
   }
 
   // ── Step 4: allGenerics.js 생성
@@ -378,7 +328,7 @@ export const apiMeta = {
 `
   fs.writeFileSync('./src/data/apiMeta.js', metaContent, 'utf-8')
 
-  console.log('\n✅ 완료')
+  console.log(`\n✅ 완료 — 브랜드 약가 ${brandFetched}건, 제네릭 ${genericsFetched}건 업데이트`)
   console.log('   allGenerics.js, drugs.js, apiMeta.js 업데이트됨')
   console.log('   git diff src/data/ 로 변경사항 확인 후 커밋하세요')
 }
