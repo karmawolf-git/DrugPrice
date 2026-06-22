@@ -92,64 +92,70 @@ async function main() {
     failed++
   }
 
-  // ── 2. dgamtCrtrInfoService1.2 / getDgamtList — XML 응답 파싱
-  console.log('\n■ dgamtCrtrInfoService1.2/getDgamtList (XML 파싱)')
+  // ── 2. dgamtCrtrInfoService1.2 / getDgamtList — 파라미터명 전수 탐색
+  console.log('\n■ dgamtCrtrInfoService1.2/getDgamtList 파라미터명 탐색')
 
-  // EDI 코드로 1건 조회해서 XML 구조 확인
-  process.stdout.write('  [ediCode=073400360 (노바스크 5mg)]... ')
-  const r2 = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', ediCode: '073400360' })
-  if (r2.status === 200 && r2.raw) {
-    const totalCount = extractXmlValue(r2.raw, 'totalCount')
-    const items = parseXmlItem(r2.raw)
+  // EDI 코드 073400360 (노바스크 5mg) 을 다양한 파라미터명으로 시도
+  const EDI = '073400360'
+  const ediParamNames = ['ediCode', 'ediCd', 'itemCode', 'itemCd', 'itemSeq', 'itmSeq', 'drugCode', 'drugCd', 'clCode', 'clCd']
+  console.log('  [EDI코드 파라미터명 탐색]')
+  for (const pName of ediParamNames) {
+    process.stdout.write(`    ${pName}=073400360... `)
+    const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', [pName]: EDI })
+    const tc = r.status === 200 ? extractXmlValue(r.raw, 'totalCount') : null
+    const items = r.status === 200 ? parseXmlItem(r.raw) : []
     if (items.length > 0) {
-      console.log(`✅ HTTP 200 — totalCount=${totalCount}`)
-      console.log('   첫 번째 아이템 필드:', Object.keys(items[0]).join(', '))
-      console.log('   첫 번째 아이템 값:', JSON.stringify(items[0], null, 2))
+      console.log(`✅ totalCount=${tc}, 필드: ${Object.keys(items[0]).join(', ')}`)
+      console.log('   값:', JSON.stringify(items[0]))
       passed++
     } else {
-      console.log(`⚠️  HTTP 200 — 아이템 없음, totalCount=${totalCount}`)
-      console.log('   원본 XML (처음 500자):', r2.raw.slice(0, 500))
+      console.log(`totalCount=${tc ?? r.status}`)
     }
-  } else {
-    console.log(`❌ HTTP ${r2.status} — ${r2.raw?.slice(0, 150)}`)
-    failed++
   }
 
-  // 성분코드로도 확인
-  process.stdout.write('\n  [ingrCode=107601ATB (암로디핀 5mg)]... ')
-  const r3 = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '3', pageNo: '1', ingrCode: '107601ATB' })
-  if (r3.status === 200 && r3.raw) {
-    const totalCount = extractXmlValue(r3.raw, 'totalCount')
-    const items = parseXmlItem(r3.raw)
+  // 성분코드 107601ATB (암로디핀 5mg) 를 다양한 파라미터명으로 시도
+  const ING = '107601ATB'
+  const ingParamNames = ['ingrCode', 'ingrCd', 'ingdCd', 'compCode', 'compCd', 'insrCode', 'insrCd']
+  console.log('\n  [성분코드 파라미터명 탐색]')
+  for (const pName of ingParamNames) {
+    process.stdout.write(`    ${pName}=107601ATB... `)
+    const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', [pName]: ING })
+    const tc = r.status === 200 ? extractXmlValue(r.raw, 'totalCount') : null
+    const items = r.status === 200 ? parseXmlItem(r.raw) : []
     if (items.length > 0) {
-      console.log(`✅ totalCount=${totalCount}, ${items.length}건 수신`)
-      console.log('   필드명:', Object.keys(items[0]).join(', '))
+      console.log(`✅ totalCount=${tc}, 필드: ${Object.keys(items[0]).join(', ')}`)
       passed++
     } else {
-      console.log(`⚠️  totalCount=${totalCount}, 아이템 파싱 실패`)
-      console.log('   원본:', r3.raw.slice(0, 500))
+      console.log(`totalCount=${tc ?? r.status}`)
     }
-  } else {
-    console.log(`❌ HTTP ${r3.status}`)
-    failed++
   }
 
-  // 파라미터 없이 첫 페이지 (전체 목록 샘플)
-  process.stdout.write('\n  [파라미터 없음, numOfRows=1]... ')
-  const r4 = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1' })
-  if (r4.status === 200 && r4.raw) {
-    const totalCount = extractXmlValue(r4.raw, 'totalCount')
-    const items = parseXmlItem(r4.raw)
+  // 아이템 이름으로도 시도
+  console.log('\n  [약품명 파라미터명 탐색]')
+  for (const pName of ['itemName', 'itemNm', 'drugName', 'drugNm', 'mdctnNm', 'itmNm']) {
+    process.stdout.write(`    ${pName}=노바스크... `)
+    const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', [pName]: '노바스크' })
+    const tc = r.status === 200 ? extractXmlValue(r.raw, 'totalCount') : null
+    const items = r.status === 200 ? parseXmlItem(r.raw) : []
     if (items.length > 0) {
-      console.log(`✅ totalCount=${totalCount}`)
-      console.log('   필드명:', Object.keys(items[0]).join(', '))
+      console.log(`✅ totalCount=${tc}, 필드: ${Object.keys(items[0]).join(', ')}`)
       passed++
     } else {
-      console.log(`⚠️  totalCount=${totalCount}, 아이템 없음`)
-      console.log('   원본:', r4.raw.slice(0, 500))
+      console.log(`totalCount=${tc ?? r.status}`)
     }
+  }
+
+  // 파라미터 없이 큰 numOfRows (전체 목록 시도)
+  process.stdout.write('\n  [파라미터 없음 numOfRows=5]... ')
+  const rAll = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '5', pageNo: '1' })
+  const tcAll = rAll.status === 200 ? extractXmlValue(rAll.raw, 'totalCount') : null
+  const itemsAll = rAll.status === 200 ? parseXmlItem(rAll.raw) : []
+  if (itemsAll.length > 0) {
+    console.log(`✅ totalCount=${tcAll}, 필드: ${Object.keys(itemsAll[0]).join(', ')}`)
+    console.log('   첫 값:', JSON.stringify(itemsAll[0]))
+    passed++
   } else {
-    console.log(`❌ HTTP ${r4.status}`)
+    console.log(`totalCount=${tcAll ?? rAll.status}, raw: ${rAll.raw?.slice(0, 300)}`)
   }
 
   console.log(`\n${'─'.repeat(50)}`)
