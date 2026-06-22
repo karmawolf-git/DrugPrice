@@ -47,9 +47,9 @@ const DRUG_CONFIGS = {
     ],
   },
   'lipitor-plus': {
-    // HIRA 품목명에 성분 순서가 두 가지로 등록돼 있어 양쪽 검색 필요:
-    // '아토르바스타틴칼슘/에제티미브정' 및 '에제티미브/아토르바스타틴칼슘정'
+    // gnlNmCd 매칭 외에, 품목명에 두 성분이 모두 포함된 제품을 추가 수집
     itmNmQuery: ['아토르바스타틴칼슘', '에제티미브'],
+    ingredientFilter: ['에제티미브', '아토르바스타틴'],
     specs: [
       { specKey: '10/10mg', ingCode: '633800ATB', brandEdi: '645405820' },
       { specKey: '10/20mg', ingCode: '633900ATB', brandEdi: '645405830' },
@@ -75,8 +75,8 @@ const DRUG_CONFIGS = {
     ],
   },
   caduet: {
-    // '아토르바스타틴칼슘/암로디핀베실산염정' 및 '암로디핀베실산염/아토르바스타틴칼슘정'
     itmNmQuery: ['아토르바스타틴칼슘', '암로디핀베실산염'],
+    ingredientFilter: ['암로디핀', '아토르바스타틴'],
     specs: [
       { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
       { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
@@ -88,6 +88,20 @@ const DRUG_CONFIGS = {
 
 // HIRA 약가기준정보조회서비스 (dgamtCrtrInfoService1.2)
 const HIRA_BASE = 'https://apis.data.go.kr/B551182/dgamtCrtrInfoService1.2/getDgamtList'
+
+// 복합제 품목명에서 "X/Ymg" 규격 추출
+// 예: "에제티미브/아토르바스타틴칼슘정10밀리그램/10밀리그램" → "10/10mg"
+//     "암로디핀베실산염/아토르바스타틴칼슘정5mg/10mg" → "5/10mg"
+function parseDoseFromName(name) {
+  const mg = '(?:밀리그램?|밀리그람|mg)'
+  // 패턴1: X/Y밀리그램 (끝에 단위 한 번)
+  let m = name.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*\\/\\s*(\\d+(?:\\.\\d+)?)\\s*${mg}`, 'i'))
+  if (m) return `${m[1]}/${m[2]}mg`
+  // 패턴2: X밀리그램/Y밀리그램 (각각 단위)
+  m = name.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*${mg}\\s*\\/\\s*(\\d+(?:\\.\\d+)?)\\s*${mg}`, 'i'))
+  if (m) return `${m[1]}/${m[2]}mg`
+  return null
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // XML 유틸리티 (HIRA API는 XML만 지원, type=json 무시됨)
@@ -308,7 +322,7 @@ async function main() {
   let genericFetched = 0
   const itmNmCache = {}
 
-  for (const [drugId, { itmNmQuery, specs }] of Object.entries(DRUG_CONFIGS)) {
+  for (const [drugId, { itmNmQuery, ingredientFilter, specs }] of Object.entries(DRUG_CONFIGS)) {
     const queries = Array.isArray(itmNmQuery) ? itmNmQuery : [itmNmQuery]
     process.stdout.write(`  ${drugId} (itmNm=${queries.join('+')})... `)
 
@@ -333,11 +347,21 @@ async function main() {
     }
 
     // gnlNmCd 기준으로 specKey별 분류 (브랜드 제외)
+    // ingredientFilter가 있는 복합제는 품목명 성분 필터로도 추가 수집
     const specGroups = {}
     for (const item of allItems) {
       const parsed = parseItem(item)
       if (brandEdis.has(parsed.ediCode)) continue
-      const specKey = ingCodeToSpec[parsed.ingCode]
+
+      let specKey = ingCodeToSpec[parsed.ingCode]
+
+      if (!specKey && ingredientFilter) {
+        const name = parsed.productName
+        if (ingredientFilter.every(kw => name.includes(kw))) {
+          specKey = parseDoseFromName(name)
+        }
+      }
+
       if (!specKey) continue
       if (!specGroups[specKey]) specGroups[specKey] = []
       specGroups[specKey].push({
