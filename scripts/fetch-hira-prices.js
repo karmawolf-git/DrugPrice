@@ -46,7 +46,7 @@ const DRUG_CONFIGS = {
     ],
   },
   'lipitor-plus': {
-    itmNmQuery: '에제티미브',
+    itmNmQuery: '아토르바스타틴칼슘',
     specs: [
       { specKey: '10/10mg', ingCode: '633800ATB', brandEdi: '645405820' },
       { specKey: '10/20mg', ingCode: '633900ATB', brandEdi: '645405830' },
@@ -72,7 +72,7 @@ const DRUG_CONFIGS = {
     ],
   },
   caduet: {
-    itmNmQuery: '암로디핀베실산염',
+    itmNmQuery: '아토르바스타틴칼슘',
     specs: [
       { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
       { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
@@ -302,11 +302,13 @@ async function main() {
   console.log('\n■ 제네릭 약가 조회 (itmNm 성분명 검색)')
   const genericData = {}
   let genericFetched = 0
+  const itmNmCache = {}
 
   for (const [drugId, { itmNmQuery, specs }] of Object.entries(DRUG_CONFIGS)) {
     process.stdout.write(`  ${drugId} (itmNm=${itmNmQuery})... `)
-    const allItems = await fetchAllByItmNm(itmNmQuery)
-    console.log(`${allItems.length}건 수집`)
+    if (!itmNmCache[itmNmQuery]) itmNmCache[itmNmQuery] = await fetchAllByItmNm(itmNmQuery)
+    const allItems = itmNmCache[itmNmQuery]
+    console.log(`${allItems.length}건 (캐시: ${Object.keys(itmNmCache).length}종)`)
 
     // 실제 API gnlNmCd → specKey 매핑 (하드코딩 ingCode 대신 brnad 조회 결과 사용)
     const ingCodeToSpec = {}
@@ -340,8 +342,22 @@ async function main() {
       console.log(`    ${specKey}: ${specGroups[specKey].length}개`)
     }
 
+    // 미분류 항목의 gnlNmCd 분포 출력 (진단용)
+    const unmatchedCounts = {}
+    for (const item of allItems) {
+      const parsed = parseItem(item)
+      if (brandEdis.has(parsed.ediCode)) continue
+      if (!ingCodeToSpec[parsed.ingCode]) {
+        unmatchedCounts[parsed.ingCode] = (unmatchedCounts[parsed.ingCode] || 0) + 1
+      }
+    }
+    const unmatchedTotal = Object.values(unmatchedCounts).reduce((a, b) => a + b, 0)
+    if (unmatchedTotal > 0) {
+      const top = Object.entries(unmatchedCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+      console.log(`    ⚠️  미분류 ${unmatchedTotal}건 — gnlNmCd: ${top.map(([k, v]) => `${k}(${v})`).join(', ')}`)
+    }
+
     genericData[drugId] = specGroups
-    await sleep(300)
   }
 
   // ── 4. allGenerics.js 재생성
