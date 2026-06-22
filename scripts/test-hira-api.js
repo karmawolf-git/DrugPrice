@@ -92,70 +92,58 @@ async function main() {
     failed++
   }
 
-  // ── 2. dgamtCrtrInfoService1.2 / getDgamtList — 파라미터명 전수 탐색
-  console.log('\n■ dgamtCrtrInfoService1.2/getDgamtList 파라미터명 탐색')
+  // ── 2. dgamtCrtrInfoService1.2 / getDgamtList — 확인된 파라미터로 실제 데이터 검증
+  console.log('\n■ dgamtCrtrInfoService1.2/getDgamtList 데이터 검증')
 
-  // EDI 코드 073400360 (노바스크 5mg) 을 다양한 파라미터명으로 시도
-  const EDI = '073400360'
-  const ediParamNames = ['ediCode', 'ediCd', 'itemCode', 'itemCd', 'itemSeq', 'itmSeq', 'drugCode', 'drugCd', 'clCode', 'clCd']
-  console.log('  [EDI코드 파라미터명 탐색]')
-  for (const pName of ediParamNames) {
-    process.stdout.write(`    ${pName}=073400360... `)
-    const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', [pName]: EDI })
-    const tc = r.status === 200 ? extractXmlValue(r.raw, 'totalCount') : null
-    const items = r.status === 200 ? parseXmlItem(r.raw) : []
+  // itmNm=노바스크 — 20건 반환 확인됨, 실제 데이터 내용 출력
+  process.stdout.write('  itmNm=노바스크 (첫 3건)... ')
+  const rNm = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '3', pageNo: '1', itmNm: '노바스크' })
+  if (rNm.status === 200) {
+    const tc = extractXmlValue(rNm.raw, 'totalCount')
+    const items = parseXmlItem(rNm.raw)
     if (items.length > 0) {
-      console.log(`✅ totalCount=${tc}, 필드: ${Object.keys(items[0]).join(', ')}`)
-      console.log('   값:', JSON.stringify(items[0]))
+      console.log(`✅ totalCount=${tc}`)
+      for (const it of items) console.log(`   → mdsCd=${it.mdsCd} gnlNmCd=${it.gnlNmCd} itmNm=${it.itmNm} nomNm=${it.nomNm} mxCprc=${it.mxCprc} mnfEntpNm=${it.mnfEntpNm}`)
       passed++
     } else {
-      console.log(`totalCount=${tc ?? r.status}`)
+      console.log(`⚠️  totalCount=${tc}, 아이템 없음`)
     }
-  }
-
-  // 성분코드 107601ATB (암로디핀 5mg) 를 다양한 파라미터명으로 시도
-  const ING = '107601ATB'
-  const ingParamNames = ['ingrCode', 'ingrCd', 'ingdCd', 'compCode', 'compCd', 'insrCode', 'insrCd']
-  console.log('\n  [성분코드 파라미터명 탐색]')
-  for (const pName of ingParamNames) {
-    process.stdout.write(`    ${pName}=107601ATB... `)
-    const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', [pName]: ING })
-    const tc = r.status === 200 ? extractXmlValue(r.raw, 'totalCount') : null
-    const items = r.status === 200 ? parseXmlItem(r.raw) : []
-    if (items.length > 0) {
-      console.log(`✅ totalCount=${tc}, 필드: ${Object.keys(items[0]).join(', ')}`)
-      passed++
-    } else {
-      console.log(`totalCount=${tc ?? r.status}`)
-    }
-  }
-
-  // 아이템 이름으로도 시도
-  console.log('\n  [약품명 파라미터명 탐색]')
-  for (const pName of ['itemName', 'itemNm', 'drugName', 'drugNm', 'mdctnNm', 'itmNm']) {
-    process.stdout.write(`    ${pName}=노바스크... `)
-    const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', [pName]: '노바스크' })
-    const tc = r.status === 200 ? extractXmlValue(r.raw, 'totalCount') : null
-    const items = r.status === 200 ? parseXmlItem(r.raw) : []
-    if (items.length > 0) {
-      console.log(`✅ totalCount=${tc}, 필드: ${Object.keys(items[0]).join(', ')}`)
-      passed++
-    } else {
-      console.log(`totalCount=${tc ?? r.status}`)
-    }
-  }
-
-  // 파라미터 없이 큰 numOfRows (전체 목록 시도)
-  process.stdout.write('\n  [파라미터 없음 numOfRows=5]... ')
-  const rAll = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '5', pageNo: '1' })
-  const tcAll = rAll.status === 200 ? extractXmlValue(rAll.raw, 'totalCount') : null
-  const itemsAll = rAll.status === 200 ? parseXmlItem(rAll.raw) : []
-  if (itemsAll.length > 0) {
-    console.log(`✅ totalCount=${tcAll}, 필드: ${Object.keys(itemsAll[0]).join(', ')}`)
-    console.log('   첫 값:', JSON.stringify(itemsAll[0]))
-    passed++
   } else {
-    console.log(`totalCount=${tcAll ?? rAll.status}, raw: ${rAll.raw?.slice(0, 300)}`)
+    console.log(`❌ HTTP ${rNm.status}`)
+    failed++
+  }
+
+  // mdsCd (응답 필드명) 를 검색 파라미터로도 시도 — EDI 코드 검색용
+  process.stdout.write('\n  mdsCd=073400360 (노바스크 5mg EDI)... ')
+  const rMdsCd = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '1', pageNo: '1', mdsCd: '073400360' })
+  if (rMdsCd.status === 200) {
+    const tc = extractXmlValue(rMdsCd.raw, 'totalCount')
+    const items = parseXmlItem(rMdsCd.raw)
+    if (items.length > 0) {
+      console.log(`✅ totalCount=${tc}, mxCprc=${items[0].mxCprc}`)
+      passed++
+    } else {
+      console.log(`totalCount=${tc}`)
+    }
+  } else {
+    console.log(`❌ HTTP ${rMdsCd.status}`)
+  }
+
+  // gnlNmCd (응답 필드명) 를 검색 파라미터로도 시도 — 성분코드 검색용
+  process.stdout.write('\n  gnlNmCd=107601ATB (암로디핀 5mg 성분코드)... ')
+  const rGnl = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '3', pageNo: '1', gnlNmCd: '107601ATB' })
+  if (rGnl.status === 200) {
+    const tc = extractXmlValue(rGnl.raw, 'totalCount')
+    const items = parseXmlItem(rGnl.raw)
+    if (items.length > 0) {
+      console.log(`✅ totalCount=${tc}`)
+      for (const it of items) console.log(`   → mdsCd=${it.mdsCd} itmNm=${it.itmNm} mxCprc=${it.mxCprc}`)
+      passed++
+    } else {
+      console.log(`totalCount=${tc}`)
+    }
+  } else {
+    console.log(`❌ HTTP ${rGnl.status}`)
   }
 
   console.log(`\n${'─'.repeat(50)}`)
