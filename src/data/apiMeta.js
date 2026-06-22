@@ -1,6 +1,6 @@
-// 배포 시 fetch-hira-prices.js가 덮어씁니다. 이 값은 로컬 개발용 기본값입니다.
+// 자동 생성 — fetch-hira-prices.js
 export const apiMeta = {
-  lastFetched: null,
+  lastFetched: '2026-06-22T09:21:04.216Z',
   source: '건강보험심사평가원 (HIRA)',
-  apiEndpoint: 'msInsItemPriceInfoService',
+  apiEndpoint: 'dgamtCrtrInfoService1.2/getDgamtList',
 }
