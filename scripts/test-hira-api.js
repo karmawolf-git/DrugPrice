@@ -41,21 +41,12 @@ function getBody(json) {
 
 const BASE_HIRA = 'https://apis.data.go.kr/B551182'
 
-// ── msInsItemPriceInfoService (이전에 사용하던 서비스 — 키 미등록)
-const CURRENT = `${BASE_HIRA}/msInsItemPriceInfoService/getMsInsItemPriceInfo`
+// ── msInsItemPriceInfoService (이전 서비스 — 키 미등록)
+const OLD_SERVICE = `${BASE_HIRA}/msInsItemPriceInfoService/getMsInsItemPriceInfo`
 
-// ── 약가기준정보조회서비스 (15054445) — 유저 확인 엔드포인트
+// ── 약가기준정보조회서비스 (15054445) — getDgamtList 오퍼레이션
 const DGAMT_BASE = `${BASE_HIRA}/dgamtCrtrInfoService1.2`
-
-// 오퍼레이션명 후보 (Swagger에서 확인 필요)
-const CANDIDATES = [
-  `${DGAMT_BASE}/getDgamtCrtrInfo`,
-  `${DGAMT_BASE}/getDgamtCrtrInfoList`,
-  `${DGAMT_BASE}/getInsHealthDrugPrcInfo`,
-  `${DGAMT_BASE}/getInsHealthDrugPrcList`,
-  `${DGAMT_BASE}/getDrugPrcInfo`,
-  `${DGAMT_BASE}/getDrugPrcList`,
-]
+const DGAMT_URL = `${DGAMT_BASE}/getDgamtList`
 
 async function main() {
   console.log('=== HIRA API 연결 테스트 ===\n')
@@ -67,7 +58,7 @@ async function main() {
   // ── 1. 이전 서비스 확인 (msInsItemPriceInfoService — 키 미등록 예상)
   console.log('■ msInsItemPriceInfoService (이전 서비스, 키 미등록 예상)')
   process.stdout.write('  노바스크 5mg (EDI: 073400360)... ')
-  const r1 = await get(CURRENT, { serviceKey: KEY, type: 'json', numOfRows: '1', ediCode: '073400360' })
+  const r1 = await get(OLD_SERVICE, { serviceKey: KEY, type: 'json', numOfRows: '1', ediCode: '073400360' })
   if (r1.status === 200 && getBody(r1.json)?.totalCount > 0) {
     const item = getBody(r1.json)?.items?.item
     const p = Array.isArray(item) ? item[0] : item
@@ -79,51 +70,38 @@ async function main() {
     failed++
   }
 
-  // ── 2. 현재 서비스 — 인코딩 포함 버전도 테스트 (비교용)
-  process.stdout.write('  노바스크 5mg (인코딩 포함 버전)... ')
-  const encKey = encodeURIComponent(KEY)
-  const qs2 = `serviceKey=${encKey}&type=json&numOfRows=1&ediCode=073400360`
-  const r2 = await new Promise((resolve) => {
-    const req = https.get(`${CURRENT}?${qs2}`, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
-      let body = ''
-      res.on('data', c => body += c)
-      res.on('end', () => {
-        try { resolve({ status: res.statusCode, json: JSON.parse(body), raw: body }) }
-        catch { resolve({ status: res.statusCode, json: null, raw: body }) }
-      })
-    })
-    req.on('error', e => resolve({ status: 0, json: null, raw: e.message }))
-    req.setTimeout(10000, () => { req.destroy(); resolve({ status: 0, json: null, raw: 'timeout' }) })
-  })
-  if (r2.status === 200 && getBody(r2.json)?.totalCount > 0) {
-    console.log(`✅ HTTP 200 (인코딩 버전도 성공)`)
-  } else {
-    console.log(`❌ HTTP ${r2.status} — ${r2.raw?.slice(0, 100)}`)
-  }
+  // ── 2. dgamtCrtrInfoService1.2 / getDgamtList — 파라미터 조합 탐색
+  console.log('\n■ dgamtCrtrInfoService1.2/getDgamtList 파라미터 탐색')
 
-  // ── 3. 약가기준정보조회서비스 (dgamtCrtrInfoService1.2) 오퍼레이션 탐색
-  console.log('\n■ 약가기준정보조회서비스 dgamtCrtrInfoService1.2 오퍼레이션 탐색')
-  for (const url of CANDIDATES) {
-    const name = url.split('/').slice(-2).join('/')
-    process.stdout.write(`  ${name}... `)
-    const r = await get(url, { serviceKey: KEY, type: 'json', numOfRows: '1', pageNo: '1' })
+  const paramSets = [
+    { label: 'ediCode (EDI)', params: { serviceKey: KEY, type: 'json', numOfRows: '1', pageNo: '1', ediCode: '073400360' } },
+    { label: 'ediCode (EDI) no type', params: { serviceKey: KEY, numOfRows: '1', pageNo: '1', ediCode: '073400360' } },
+    { label: 'ingrCode (성분코드)', params: { serviceKey: KEY, type: 'json', numOfRows: '1', pageNo: '1', ingrCode: '107601ATB' } },
+    { label: 'itemName (제품명)', params: { serviceKey: KEY, type: 'json', numOfRows: '3', pageNo: '1', itemName: '노바스크' } },
+    { label: 'itemName (영문)', params: { serviceKey: KEY, type: 'json', numOfRows: '3', pageNo: '1', itemName: 'Norvasc' } },
+    { label: '파라미터 없음 (첫 페이지)', params: { serviceKey: KEY, type: 'json', numOfRows: '3', pageNo: '1' } },
+  ]
+
+  for (const { label, params } of paramSets) {
+    process.stdout.write(`  [${label}]... `)
+    const r = await get(DGAMT_URL, params)
     if (r.status === 200 && getBody(r.json)?.items) {
-      console.log(`✅ HTTP 200 — 데이터 있음!`)
       const item = getBody(r.json)?.items?.item
       const p = Array.isArray(item) ? item[0] : item
-      console.log('   응답 필드:', Object.keys(p || {}).join(', '))
+      const total = getBody(r.json)?.totalCount
+      console.log(`✅ HTTP 200 — totalCount=${total}, 필드: ${Object.keys(p || {}).join(', ')}`)
       passed++
     } else if (r.status === 200) {
-      console.log(`⚠️  HTTP 200 — 빈 결과 또는 에러: ${r.raw?.slice(0, 100)}`)
-    } else if (r.status === 404) {
-      console.log(`   HTTP 404 — 존재하지 않는 서비스명`)
+      const body = getBody(r.json)
+      console.log(`⚠️  HTTP 200 — totalCount=${body?.totalCount ?? '?'}, 응답: ${r.raw?.slice(0, 150)}`)
     } else {
-      console.log(`   HTTP ${r.status} — ${r.raw?.slice(0, 100)}`)
+      console.log(`❌ HTTP ${r.status} — ${r.raw?.slice(0, 150)}`)
+      if (r.status !== 200) failed++
     }
   }
 
   console.log(`\n${'─'.repeat(50)}`)
-  console.log(`결과: ${passed}개 통과, ${failed}개 실패 (현재 서비스 기준)`)
+  console.log(`결과: ${passed}개 통과, ${failed}개 실패`)
 }
 
 main().catch(e => { console.error(e); process.exit(1) })
