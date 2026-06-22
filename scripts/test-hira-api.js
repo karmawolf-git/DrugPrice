@@ -1,13 +1,7 @@
 #!/usr/bin/env node
 /**
- * HIRA API 연결 빠른 확인 스크립트
+ * HIRA API 연결 테스트 + 약가기준정보조회서비스 엔드포인트 탐색
  * 실행: DATA_GO_KR_KEY=YOUR_KEY node scripts/test-hira-api.js
- *
- * 확인 항목:
- * 1. API 키 유효성
- * 2. 브랜드 약가 조회 (EDI 코드)
- * 3. 성분코드 파라미터 지원 여부 (전략 1)
- * 4. 페이지 순회 가능 여부 (전략 2)
  */
 
 import https from 'https'
@@ -18,20 +12,26 @@ if (!KEY) {
   process.exit(1)
 }
 
-const BASE = 'https://apis.data.go.kr/B551182/msInsItemPriceInfoService/getMsInsItemPriceInfo'
+// serviceKey는 data.go.kr에서 이미 URL인코딩된 형식으로 발급 → 추가 인코딩 금지
+function buildQs(params) {
+  return Object.entries(params)
+    .map(([k, v]) => k === 'serviceKey' ? `${k}=${v}` : `${k}=${encodeURIComponent(v)}`)
+    .join('&')
+}
 
-function get(params) {
-  const qs = Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
-  const url = `${BASE}?${qs}`
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
+function get(baseUrl, params) {
+  const url = `${baseUrl}?${buildQs(params)}`
+  return new Promise((resolve) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
       let body = ''
       res.on('data', c => body += c)
       res.on('end', () => {
         try { resolve({ status: res.statusCode, json: JSON.parse(body), raw: body }) }
         catch { resolve({ status: res.statusCode, json: null, raw: body }) }
       })
-    }).on('error', reject).setTimeout(15000, function() { this.destroy() })
+    })
+    req.on('error', e => resolve({ status: 0, json: null, raw: e.message }))
+    req.setTimeout(15000, () => { req.destroy(); resolve({ status: 0, json: null, raw: 'timeout' }) })
   })
 }
 
@@ -39,76 +39,89 @@ function getBody(json) {
   return json?.response?.body ?? json?.body
 }
 
+const BASE_HIRA = 'https://apis.data.go.kr/B551182'
+
+// ── msInsItemPriceInfoService (현재 사용 중인 서비스)
+const CURRENT = `${BASE_HIRA}/msInsItemPriceInfoService/getMsInsItemPriceInfo`
+
+// ── 약가기준정보조회서비스 (15054445) 엔드포인트 후보
+const CANDIDATES = [
+  `${BASE_HIRA}/insItemPriceInfoService/getInsItemPriceInfo`,
+  `${BASE_HIRA}/DrugPrcStdInfoService/getDrugPrcStdInfo`,
+  `${BASE_HIRA}/drugPrcStdInfoService/getDrugPrcStdInfo`,
+  `${BASE_HIRA}/InsHealthDrugPrcInfoService/getInsHealthDrugPrcInfo`,
+  `${BASE_HIRA}/insHealthDrugPrcInfoService/getInsHealthDrugPrcInfo`,
+  `${BASE_HIRA}/insItemPrcInfoService/getInsItemPrcInfo`,
+  `${BASE_HIRA}/DrugPrcInfoService/getDrugPrcInfo`,
+]
+
 async function main() {
   console.log('=== HIRA API 연결 테스트 ===\n')
+  console.log(`서비스키 앞 8자리: ${KEY.slice(0, 8)}...`)
+  console.log(`서비스키 형식: ${/[%+/=]/.test(KEY) ? 'URL인코딩 포함' : '순수 hex/alphanumeric'}\n`)
+
   let passed = 0, failed = 0
 
-  // ── 1. 브랜드 약가 조회 (노바스크 5mg, EDI: 073400360)
-  process.stdout.write('1. 브랜드 약가 조회 (노바스크 5mg)... ')
-  const r1 = await get({ serviceKey: KEY, type: 'json', numOfRows: '1', ediCode: '073400360' })
+  // ── 1. 현재 서비스 — serviceKey 인코딩 없이 전송 (수정된 방식)
+  console.log('■ msInsItemPriceInfoService (현재 서비스, 인코딩 수정)')
+  process.stdout.write('  노바스크 5mg (EDI: 073400360)... ')
+  const r1 = await get(CURRENT, { serviceKey: KEY, type: 'json', numOfRows: '1', ediCode: '073400360' })
   if (r1.status === 200 && getBody(r1.json)?.totalCount > 0) {
     const item = getBody(r1.json)?.items?.item
     const p = Array.isArray(item) ? item[0] : item
-    const price = p?.maximumPrice ?? p?.MAXIMUM_PRICE
-    console.log(`✅ ${p?.itemName ?? p?.ITEM_NAME} = ${price}원`)
-
-    // 응답 필드 전체 출력 (성분코드 포함 여부 확인)
+    console.log(`✅ HTTP 200 — ${p?.itemName ?? p?.ITEM_NAME} = ${p?.maximumPrice ?? p?.MAXIMUM_PRICE}원`)
     console.log('   응답 필드:', Object.keys(p || {}).join(', '))
     passed++
   } else {
-    console.log(`❌ HTTP ${r1.status}`)
-    if (r1.raw) console.log('   응답:', r1.raw.slice(0, 200))
+    console.log(`❌ HTTP ${r1.status} — ${r1.raw?.slice(0, 200)}`)
     failed++
   }
 
-  // ── 2. 성분코드 파라미터 지원 여부 (전략 1)
-  process.stdout.write('\n2. 성분코드 파라미터 지원 여부 (ingrCode=107601ATB)... ')
-  const r2 = await get({ serviceKey: KEY, type: 'json', numOfRows: '5', ingrCode: '107601ATB' })
-  const body2 = getBody(r2.json)
-  if (r2.status === 200 && (body2?.totalCount ?? 0) > 0) {
-    console.log(`✅ 지원됨! ${body2.totalCount}건 (노바스크 5mg 계열)`)
-    console.log('   → 전략 1 사용 가능 — 빠른 조회 가능')
-    passed++
+  // ── 2. 현재 서비스 — 인코딩 포함 버전도 테스트 (비교용)
+  process.stdout.write('  노바스크 5mg (인코딩 포함 버전)... ')
+  const encKey = encodeURIComponent(KEY)
+  const qs2 = `serviceKey=${encKey}&type=json&numOfRows=1&ediCode=073400360`
+  const r2 = await new Promise((resolve) => {
+    const req = https.get(`${CURRENT}?${qs2}`, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
+      let body = ''
+      res.on('data', c => body += c)
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, json: JSON.parse(body), raw: body }) }
+        catch { resolve({ status: res.statusCode, json: null, raw: body }) }
+      })
+    })
+    req.on('error', e => resolve({ status: 0, json: null, raw: e.message }))
+    req.setTimeout(10000, () => { req.destroy(); resolve({ status: 0, json: null, raw: 'timeout' }) })
+  })
+  if (r2.status === 200 && getBody(r2.json)?.totalCount > 0) {
+    console.log(`✅ HTTP 200 (인코딩 버전도 성공)`)
   } else {
-    const msg = body2?.totalCount === 0 ? '결과 없음 (파라미터 무시됨)' : `HTTP ${r2.status}`
-    console.log(`⚠️  미지원: ${msg}`)
-    console.log('   → 전략 2(전체 페이지 순회)로 동작합니다')
-    // 실패는 아님 — 전략 2로 fallback
+    console.log(`❌ HTTP ${r2.status} — ${r2.raw?.slice(0, 100)}`)
   }
 
-  // ── 3. 전체 조회 1페이지 확인 (전략 2 전제 조건)
-  process.stdout.write('\n3. 전체 페이지 순회 가능 여부 (1페이지, 10건)... ')
-  const r3 = await get({ serviceKey: KEY, type: 'json', numOfRows: '10', pageNo: '1' })
-  const body3 = getBody(r3.json)
-  if (r3.status === 200 && body3?.items?.item) {
-    const items = body3.items.item
-    const count = Array.isArray(items) ? items.length : 1
-    console.log(`✅ 총 ${body3.totalCount?.toLocaleString()}건, ${count}건 수신`)
-    passed++
-  } else {
-    console.log(`❌ HTTP ${r3.status}: ${r3.raw?.slice(0, 100)}`)
-    failed++
+  // ── 3. 약가기준정보조회서비스 엔드포인트 탐색
+  console.log('\n■ 약가기준정보조회서비스 (15054445) 엔드포인트 탐색')
+  for (const url of CANDIDATES) {
+    const name = url.split('/').slice(-2).join('/')
+    process.stdout.write(`  ${name}... `)
+    const r = await get(url, { serviceKey: KEY, type: 'json', numOfRows: '1', pageNo: '1' })
+    if (r.status === 200 && getBody(r.json)?.items) {
+      console.log(`✅ HTTP 200 — 데이터 있음!`)
+      const item = getBody(r.json)?.items?.item
+      const p = Array.isArray(item) ? item[0] : item
+      console.log('   응답 필드:', Object.keys(p || {}).join(', '))
+      passed++
+    } else if (r.status === 200) {
+      console.log(`⚠️  HTTP 200 — 빈 결과 또는 에러: ${r.raw?.slice(0, 100)}`)
+    } else if (r.status === 404) {
+      console.log(`   HTTP 404 — 존재하지 않는 서비스명`)
+    } else {
+      console.log(`   HTTP ${r.status} — ${r.raw?.slice(0, 100)}`)
+    }
   }
 
-  // ── 4. 카듀엣 브랜드 가격 확인
-  process.stdout.write('\n4. 카듀엣 5/10mg 가격 확인 (EDI: 073400160)... ')
-  const r4 = await get({ serviceKey: KEY, type: 'json', numOfRows: '1', ediCode: '073400160' })
-  const body4 = getBody(r4.json)
-  if (r4.status === 200 && body4?.totalCount > 0) {
-    const item = body4?.items?.item
-    const p = Array.isArray(item) ? item[0] : item
-    const price = p?.maximumPrice ?? p?.MAXIMUM_PRICE
-    console.log(`✅ ${p?.itemName ?? p?.ITEM_NAME} = ${price}원`)
-    passed++
-  } else {
-    console.log(`❌ HTTP ${r4.status}`)
-    failed++
-  }
-
-  console.log(`\n${'─'.repeat(40)}`)
-  console.log(`결과: ${passed}개 통과, ${failed}개 실패`)
-  if (failed === 0) console.log('✅ API 연결 정상 — fetch-hira-prices.js 실행 가능')
-  else console.log('❌ 위 항목 확인 후 재시도')
+  console.log(`\n${'─'.repeat(50)}`)
+  console.log(`결과: ${passed}개 통과, ${failed}개 실패 (현재 서비스 기준)`)
 }
 
 main().catch(e => { console.error(e); process.exit(1) })

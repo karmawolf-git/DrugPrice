@@ -91,8 +91,9 @@ function fetchJson(url) {
 }
 
 function buildUrl(endpoint, params) {
+  // serviceKey는 data.go.kr에서 이미 URL인코딩된 형식으로 발급되므로 추가 인코딩 금지
   const qs = Object.entries(params)
-    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .map(([k, v]) => k === 'serviceKey' ? `${k}=${v}` : `${k}=${encodeURIComponent(v)}`)
     .join('&')
   return `${HIRA_BASE}/${endpoint}?${qs}`
 }
