@@ -8,9 +8,13 @@
  *
  * 사용 API: dgamtCrtrInfoService1.2/getDgamtList
  * 브랜드 조회: mdsCd (EDI코드) → 단건 정확 조회
- * 제네릭 조회: itmNm (성분명 부분검색) + 페이지네이션 → gnlNmCd 로 규격 분류
+ * 제네릭 조회:
+ *   - genericEdis 있는 규격: 알려진 EDI코드 목록으로 mdsCd 직접 조회 (상표명 제네릭 포함)
+ *   - genericEdis 없는 규격: itmNm (성분명 전방일치) 검색 + gnlNmCd 분류
  *
  * NOTE: gnlNmCd는 API 응답 필드이며 검색 파라미터로 지원되지 않음 (totalCount=0)
+ * NOTE: 상표명으로 등록된 복합제 제네릭(예: 건토젯, 아토젯)은 itmNm 검색으로 찾을 수 없으므로
+ *       genericEdis 목록에 EDI코드를 하드코딩하여 mdsCd API로 직접 조회
  */
 
 import https from 'https'
@@ -25,11 +29,11 @@ if (!SERVICE_KEY) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 약품별 설정
-// brandEdi: 브랜드 약품의 EDI 코드 (mdsCd 파라미터로 조회)
-// ingCode:  성분코드 (gnlNmCd — 제네릭 분류에 사용)
-// itmNmQuery: 제네릭 일괄 조회용 성분명 키워드 (itmNm 파라미터로 검색, 전방일치)
-//             복합제는 성분 순서가 다를 수 있으므로 배열로 여러 키워드 지정 가능
-// ingredientFilter: 복합제 전용 — raw itmNm에 모든 키워드가 포함된 경우 추가 수집
+// brandEdi:    브랜드 약품의 EDI 코드 (mdsCd 파라미터로 조회)
+// ingCode:     성분코드 (gnlNmCd — 브랜드 확인 및 itmNm 기반 제네릭 분류에 사용)
+// itmNmQuery:  제네릭 일괄 조회용 성분명 키워드 (itmNm 전방일치, genericEdis 없을 때 사용)
+// genericEdis: 알려진 제네릭 EDI코드 목록 (mdsCd 직접 조회 — 상표명 제네릭 수집용)
+//              이 목록이 있으면 itmNm 검색 결과에 추가하여 누락 없이 수집
 // ─────────────────────────────────────────────────────────────────────────────
 const DRUG_CONFIGS = {
   norvasc: {
@@ -50,12 +54,68 @@ const DRUG_CONFIGS = {
     ],
   },
   'lipitor-plus': {
+    // itmNm 검색으로는 INN명으로 시작하는 일부만 찾을 수 있음
+    // 나머지(상표명 제네릭)는 genericEdis에 직접 등록
     itmNmQuery: ['아토르바스타틴칼슘', '에제티미브'],
     ingredientFilter: ['에제티미브', '아토르바스타틴'],
     specs: [
-      { specKey: '10/10mg', ingCode: '633800ATB', brandEdi: '645405820' },
-      { specKey: '10/20mg', ingCode: '633900ATB', brandEdi: '645405830' },
-      { specKey: '10/40mg', ingCode: '634800ATB', brandEdi: '645405810' },
+      {
+        specKey: '10/10mg',
+        ingCode: '633800ATB',
+        brandEdi: '645405820',
+        // 633800ATB (에제티미브 10mg + 아토르바스타틴 10mg) 등록 제네릭 EDI코드 목록
+        genericEdis: [
+          '073001640','052402040','053601630','054801260','057600860','059001010','059400060',
+          '621804250','622804530','625202110','628901970','640904190','641607520','641705920',
+          '642105690','642308510','642405210','642707030','642803350','642906530','643606070',
+          '644004530','645210490','645605510','645907150','646005220','646204270','647303990',
+          '648604200','649405580','649508090','649606370','649703150','649807810','650304250',
+          '652904510','653805900','654005660','654702180','655404170','655605300','657203800',
+          '657308490','658108180','658204560','658502410','660703510','661905640','662504650',
+          '669502700','669806020','669908090','670304640','670402350','670502340','670608730',
+          '671706820','671807260','674101940','674402400','678601890','689001550','693202420',
+          '694003390','697101040','698504730','628801790','652606960','640007710','641907750',
+          '643705130','644309610','644503250','644704850','648104690','648204380','649105140',
+          '650205750','651205690','653404760','656005210','657807460','658604600','663608350',
+          '665003030','670105120','684502040','693903400','073100410','643308630',
+        ],
+      },
+      {
+        specKey: '10/20mg',
+        ingCode: '633900ATB',
+        brandEdi: '645405830',
+        // 633900ATB (에제티미브 10mg + 아토르바스타틴 20mg) 등록 제네릭 EDI코드 목록
+        genericEdis: [
+          '641607530','052402030','053601610','054801270','057600850','059001000','059400050',
+          '621804240','622804520','625202120','628901960','640904200','641705930','642105700',
+          '642308500','642405190','642707040','642803360','642906520','643606080','644004540',
+          '645210480','645605520','645907140','646005230','646204280','647304000','648604210',
+          '649508080','649606020','649703160','649807800','650304240','652904520','653805910',
+          '654005670','655404180','655605310','657203790','657308470','658108190','658204580',
+          '660703500','661905630','662504660','669502690','669806010','669908070','670304650',
+          '670402370','670502350','670608740','671706810','671807250','674101950','674402410',
+          '678601900','689001560','693202430','694003410','697101030','698504720','628801800',
+          '652606970','640007730','641907760','643705140','644503260','644704860','648104700',
+          '648204390','649105170','650205760','651205700','653404750','656005200','657807470',
+          '658604610','663608360','665003040','670105130','684502060','693903390','073100380',
+          '643308640',
+        ],
+      },
+      {
+        specKey: '10/40mg',
+        ingCode: '634800ATB',
+        brandEdi: '645405810',
+        // 634800ATB (에제티미브 10mg + 아토르바스타틴 40mg) 등록 제네릭 EDI코드 목록
+        genericEdis: [
+          '642707050','650304230','642906540','652606980','641607540','643606090','054801280',
+          '057600870','059400040','621804230','622804510','625202130','628901980','640007720',
+          '641907770','642308490','642405200','644503270','644704870','646005240','647304010',
+          '648104710','648604190','649105180','649703170','649807790','653404770','653805920',
+          '654005680','657203780','657807480','658204570','660703520','662504670','669502680',
+          '670304660','670502360','670608750','671807240','684502050','689001570','694003420',
+          '628801810','073100390','642105710','643308650','645210470','657308480','678601910',
+        ],
+      },
     ],
   },
   lyrica: {
@@ -155,13 +215,6 @@ function sleep(ms) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API 응답 아이템 파싱
-// dgamtCrtrInfoService1.2 응답 필드:
-//   itmNm     = 약품명
-//   mnfEntpNm = 제조사명
-//   mxCprc    = 최고가격(급여상한금액)
-//   mdsCd     = 약품코드(EDI코드)
-//   gnlNmCd   = 일반명코드(성분코드)
-//   nomNm     = 규격
 // ─────────────────────────────────────────────────────────────────────────────
 function parseItem(item) {
   const productName = (item.itmNm ?? '').replace(/\s*[\(_（].*$/, '').trim()
@@ -183,13 +236,9 @@ async function fetchByMdsCd(mdsCd) {
     mdsCd,
   })
   const { status, raw } = await fetchRaw(url)
-  if (status !== 200 || !raw) {
-    return { error: `HTTP ${status}` }
-  }
+  if (status !== 200 || !raw) return { error: `HTTP ${status}` }
   const resultCode = extractXmlValue(raw, 'resultCode')
-  if (resultCode !== '00') {
-    return { error: `resultCode=${resultCode}` }
-  }
+  if (resultCode !== '00') return { error: `resultCode=${resultCode}` }
   const items = parseXmlItems(raw)
   return items.length > 0 ? { item: items[0] } : { error: 'no items' }
 }
@@ -227,12 +276,10 @@ async function main() {
   console.log('=== HIRA 약가 데이터 자동 업데이트 ===\n')
   console.log('서비스: dgamtCrtrInfoService1.2/getDgamtList\n')
 
-  // ── 1. 브랜드 약가 조회 (EDI 코드 → mdsCd 파라미터)
-  // 브랜드 API 응답에서 실제 gnlNmCd 를 confirmedIngCodes 에 저장 →
-  // 하드코딩 ingCode 대신 사용하여 제네릭 분류 정확도 향상
+  // ── 1. 브랜드 약가 조회
   console.log('■ 브랜드 약가 조회 (mdsCd=EDI코드)')
   const brandPrices = {}
-  const confirmedIngCodes = {} // drugId → { specKey → 실제 gnlNmCd }
+  const confirmedIngCodes = {}
   let brandFetched = 0
 
   for (const [drugId, { specs }] of Object.entries(DRUG_CONFIGS)) {
@@ -314,116 +361,107 @@ async function main() {
 
   fs.writeFileSync('./src/data/drugs.js', drugsSrc, 'utf-8')
 
-  // ── 3. 제네릭 약가 조회 (itmNm 성분명 검색 → gnlNmCd 로 분류)
-  // NOTE: gnlNmCd는 검색 파라미터 미지원 (totalCount=0). itmNm 전방일치만 사용 가능.
-  // 복합제는 ingredientFilter로 상표명 제품 일부 추가 수집 (raw itmNm 괄호 내 성분명 확인)
-  console.log('\n■ 제네릭 약가 조회 (itmNm 성분명 검색)')
+  // ── 3. 제네릭 약가 조회
+  // genericEdis가 있는 규격: mdsCd 직접 조회 (상표명 제네릭 포함)
+  // genericEdis가 없는 규격: itmNm 전방일치 검색 + gnlNmCd 분류
+  console.log('\n■ 제네릭 약가 조회')
   const genericData = {}
   let genericFetched = 0
   const itmNmCache = {}
 
   for (const [drugId, { itmNmQuery, ingredientFilter, specs }] of Object.entries(DRUG_CONFIGS)) {
-    const queries = Array.isArray(itmNmQuery) ? itmNmQuery : [itmNmQuery]
-    process.stdout.write(`  ${drugId} (itmNm=${queries.join('+')})... `)
-
-    // 쿼리별 결과 수집 후 EDI 코드 기준 중복 제거
-    const itemsByEdi = new Map()
-    for (const q of queries) {
-      if (!itmNmCache[q]) itmNmCache[q] = await fetchAllByItmNm(q)
-      for (const item of itmNmCache[q]) {
-        if (item.mdsCd && !itemsByEdi.has(item.mdsCd)) itemsByEdi.set(item.mdsCd, item)
-      }
-    }
-    const allItems = [...itemsByEdi.values()]
-    console.log(`${allItems.length}건 (쿼리: ${queries.length}개, 캐시: ${Object.keys(itmNmCache).length}종)`)
-
-    // 실제 API gnlNmCd → specKey 매핑
+    const allBrandEdis = new Set(specs.map(s => s.brandEdi).filter(Boolean))
     const ingCodeToSpec = {}
-    const brandEdis = new Set()
-    for (const { specKey, brandEdi } of specs) {
+    for (const { specKey } of specs) {
       const ingCode = confirmedIngCodes[drugId]?.[specKey]
       if (ingCode) ingCodeToSpec[ingCode] = specKey
-      brandEdis.add(brandEdi)
     }
 
-    // gnlNmCd 기준으로 specKey별 분류 (브랜드 제외)
-    // ingredientFilter가 있는 복합제는 품목명 성분 필터로도 추가 수집
-    const specGroups = {}
-    for (const item of allItems) {
-      const parsed = parseItem(item)
-      if (brandEdis.has(parsed.ediCode)) continue
+    // EDI 기준 dedup 맵: edi → { productName, manufacturer, specKey, insurancePrice }
+    const allByEdi = new Map()
 
-      let specKey = ingCodeToSpec[parsed.ingCode]
+    // ── Step A: itmNm 전방일치 검색 (INN명으로 시작하는 제네릭 수집)
+    if (itmNmQuery) {
+      const queries = Array.isArray(itmNmQuery) ? itmNmQuery : [itmNmQuery]
+      process.stdout.write(`  [itmNm] ${drugId} (${queries.join('+')})... `)
 
-      if (!specKey && ingredientFilter) {
-        // 원본 itmNm (괄호 내 성분명 포함) 기준으로 성분 필터
-        const rawName = (item.itmNm ?? '')
-        if (ingredientFilter.every(kw => rawName.includes(kw))) {
-          // 성분 나열 순서에 관계없이 양방향 용량 매칭
-          const doseStr = parseDoseFromName(parsed.productName)
-          if (doseStr) {
-            const [d1, d2] = doseStr.replace('mg', '').split('/')
-            const candidates = [`${d1}/${d2}mg`, `${d2}/${d1}mg`]
-            for (const { specKey: sk } of specs) {
-              if (candidates.includes(sk)) { specKey = sk; break }
+      const itemsByEdi = new Map()
+      for (const q of queries) {
+        if (!itmNmCache[q]) itmNmCache[q] = await fetchAllByItmNm(q)
+        for (const item of itmNmCache[q]) {
+          if (item.mdsCd && !itemsByEdi.has(item.mdsCd)) itemsByEdi.set(item.mdsCd, item)
+        }
+      }
+      const itmNmItems = [...itemsByEdi.values()]
+      console.log(`${itmNmItems.length}건`)
+
+      for (const item of itmNmItems) {
+        const parsed = parseItem(item)
+        if (allBrandEdis.has(parsed.ediCode) || parsed.price === 0) continue
+
+        let specKey = ingCodeToSpec[parsed.ingCode]
+
+        if (!specKey && ingredientFilter) {
+          const rawName = (item.itmNm ?? '')
+          if (ingredientFilter.every(kw => rawName.includes(kw))) {
+            const doseStr = parseDoseFromName(parsed.productName)
+            if (doseStr) {
+              const [d1, d2] = doseStr.replace('mg', '').split('/')
+              const candidates = [`${d1}/${d2}mg`, `${d2}/${d1}mg`]
+              for (const { specKey: sk } of specs) {
+                if (candidates.includes(sk)) { specKey = sk; break }
+              }
             }
           }
         }
-      }
 
-      if (!specKey) continue
-      if (!specGroups[specKey]) specGroups[specKey] = []
-      specGroups[specKey].push({
-        productName: parsed.productName,
-        manufacturer: parsed.manufacturer,
-        specKey,
-        insurancePrice: parsed.price,
-      })
+        if (!specKey) continue
+        allByEdi.set(parsed.ediCode, {
+          productName: parsed.productName,
+          manufacturer: parsed.manufacturer,
+          specKey,
+          insurancePrice: parsed.price,
+        })
+      }
     }
 
-    // 규격별 가격 오름차순 정렬
+    // ── Step B: genericEdis mdsCd 직접 조회 (상표명 제네릭 수집)
+    const specsWithEdis = specs.filter(s => s.genericEdis?.length > 0)
+    if (specsWithEdis.length > 0) {
+      let newCount = 0
+      for (const { specKey, genericEdis } of specsWithEdis) {
+        for (const edi of genericEdis) {
+          if (allBrandEdis.has(edi) || allByEdi.has(edi)) continue
+          const { item } = await fetchByMdsCd(edi)
+          if (!item) { await sleep(100); continue }
+          const parsed = parseItem(item)
+          if (parsed.price > 0) {
+            allByEdi.set(edi, {
+              productName: parsed.productName,
+              manufacturer: parsed.manufacturer,
+              specKey,
+              insurancePrice: parsed.price,
+            })
+            newCount++
+          }
+          await sleep(100)
+        }
+      }
+      console.log(`  [genericEdis] ${drugId}: ${newCount}건 추가`)
+    }
+
+    // ── 규격별 그룹화 및 정렬
+    const specGroups = {}
+    for (const [, entry] of allByEdi) {
+      const { specKey, ...rest } = entry
+      if (!specGroups[specKey]) specGroups[specKey] = []
+      specGroups[specKey].push({ ...rest, specKey })
+    }
+
     for (const specKey of Object.keys(specGroups)) {
       specGroups[specKey].sort((a, b) => a.insurancePrice - b.insurancePrice)
       genericFetched += specGroups[specKey].length
       console.log(`    ${specKey}: ${specGroups[specKey].length}개`)
-    }
-
-    // ingredientFilter 진단
-    if (ingredientFilter) {
-      let kwPass = 0, specMatched = 0
-      for (const item of allItems) {
-        const parsed = parseItem(item)
-        if (brandEdis.has(parsed.ediCode)) continue
-        if (ingCodeToSpec[parsed.ingCode]) continue
-        const rawName = (item.itmNm ?? '')
-        if (ingredientFilter.every(kw => rawName.includes(kw))) {
-          kwPass++
-          const doseStr = parseDoseFromName(parsed.productName)
-          if (doseStr) {
-            const [d1, d2] = doseStr.replace('mg', '').split('/')
-            const cands = [`${d1}/${d2}mg`, `${d2}/${d1}mg`]
-            if (specs.some(({ specKey: sk }) => cands.includes(sk))) specMatched++
-          }
-        }
-      }
-      if (kwPass > 0) {
-        console.log(`    ingredientFilter: 키워드통과 ${kwPass}건 → specKey매칭 ${specMatched}건`)
-      }
-    }
-
-    // 미분류 항목의 gnlNmCd 분포 출력 (진단용)
-    const unmatchedCounts = {}
-    for (const item of allItems) {
-      const parsed = parseItem(item)
-      if (brandEdis.has(parsed.ediCode)) continue
-      if (!ingCodeToSpec[parsed.ingCode]) {
-        unmatchedCounts[parsed.ingCode] = (unmatchedCounts[parsed.ingCode] || 0) + 1
-      }
-    }
-    const unmatchedTotal = Object.values(unmatchedCounts).reduce((a, b) => a + b, 0)
-    if (unmatchedTotal > 0) {
-      const top = Object.entries(unmatchedCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-      console.log(`    ⚠️  미분류 ${unmatchedTotal}건 — gnlNmCd: ${top.map(([k, v]) => `${k}(${v})`).join(', ')}`)
     }
 
     genericData[drugId] = specGroups
