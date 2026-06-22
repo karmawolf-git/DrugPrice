@@ -50,8 +50,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet src/data/drugs.js src/data/apiMeta.js; then
-            git add src/data/drugs.js src/data/apiMeta.js
+          if ! git diff --quiet src/data/drugs.js src/data/allGenerics.js src/data/apiMeta.js; then
+            git add src/data/drugs.js src/data/allGenerics.js src/data/apiMeta.js
             git commit -m "chore: HIRA 약가 자동 업데이트 $(date -u '+%Y-%m-%d')"
             git push
           else

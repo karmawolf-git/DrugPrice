@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 /**
  * HIRA(건강보험심사평가원) 약가기준정보조회서비스 API로 약가 데이터를 가져와
- * src/data/drugs.js 와 src/data/apiMeta.js 를 자동 업데이트합니다.
+ * src/data/drugs.js, src/data/allGenerics.js, src/data/apiMeta.js 를 자동 업데이트합니다.
  *
  * 실행: DATA_GO_KR_KEY=xxx node scripts/fetch-hira-prices.js
  * GitHub Actions: deploy.yml 에서 자동 실행
  *
  * 사용 API: dgamtCrtrInfoService1.2/getDgamtList
- * 검색 파라미터: mdsCd (EDI코드)
- * 응답 형식: XML
- * 주요 응답 필드: mdsCd, itmNm, mnfEntpNm, mxCprc, gnlNmCd, nomNm
+ * 브랜드 조회: mdsCd (EDI코드) → 단건 정확 조회
+ * 제네릭 조회: itmNm (성분명 부분검색) + 페이지네이션 → gnlNmCd 로 규격 분류
  */
 
 import https from 'https'
@@ -25,42 +24,62 @@ if (!SERVICE_KEY) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 약품별 설정
 // brandEdi: 브랜드 약품의 EDI 코드 (mdsCd 파라미터로 조회)
+// ingCode:  성분코드 (gnlNmCd — 제네릭 분류에 사용)
+// itmNmQuery: 제네릭 일괄 조회용 성분명 키워드 (itmNm 파라미터로 검색)
 // ─────────────────────────────────────────────────────────────────────────────
 const DRUG_CONFIGS = {
-  norvasc: [
-    { specKey: '5mg',   ingCode: '107601ATB', brandEdi: '073400360' },
-    { specKey: '10mg',  ingCode: '107602ATB', brandEdi: '073400390' },
-    { specKey: '2.5mg', ingCode: '107603ATB', brandEdi: '073400370' },
-  ],
-  lipitor: [
-    { specKey: '10mg',  ingCode: '111501ATB', brandEdi: '073400340' },
-    { specKey: '20mg',  ingCode: '111502ATB', brandEdi: '073400330' },
-    { specKey: '40mg',  ingCode: '111503ATB', brandEdi: '073400350' },
-    { specKey: '80mg',  ingCode: '111504ATB', brandEdi: '073400380' },
-  ],
-  'lipitor-plus': [
-    { specKey: '10/10mg', ingCode: '633800ATB', brandEdi: '645405820' },
-    { specKey: '10/20mg', ingCode: '633900ATB', brandEdi: '645405830' },
-    { specKey: '10/40mg', ingCode: '634800ATB', brandEdi: '645405810' },
-  ],
-  lyrica: [
-    { specKey: '25mg',  ingCode: '480405ATB', brandEdi: '073400230' },
-    { specKey: '50mg',  ingCode: '480406ATB', brandEdi: '073400240' },
-    { specKey: '75mg',  ingCode: '480401ATB', brandEdi: '073400200' },
-    { specKey: '150mg', ingCode: '480402ATB', brandEdi: '073400210' },
-    { specKey: '300mg', ingCode: '480403ATB', brandEdi: '073400220' },
-  ],
-  celebrex: [
-    { specKey: '100mg', ingCode: '347702ATB', brandEdi: '073400290' },
-    { specKey: '200mg', ingCode: '347701ATB', brandEdi: '073400280' },
-    { specKey: '400mg', ingCode: '347703ATB', brandEdi: '073400300' },
-  ],
-  caduet: [
-    { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
-    { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
-    { specKey: '5/40mg',  ingCode: '472500ATB', brandEdi: '073400170' },
-    { specKey: '10/20mg', ingCode: '518900ATB', brandEdi: '073400190' },
-  ],
+  norvasc: {
+    itmNmQuery: '암로디핀베실산염',
+    specs: [
+      { specKey: '5mg',   ingCode: '107601ATB', brandEdi: '073400360' },
+      { specKey: '10mg',  ingCode: '107602ATB', brandEdi: '073400390' },
+      { specKey: '2.5mg', ingCode: '107603ATB', brandEdi: '073400370' },
+    ],
+  },
+  lipitor: {
+    itmNmQuery: '아토르바스타틴칼슘',
+    specs: [
+      { specKey: '10mg',  ingCode: '111501ATB', brandEdi: '073400340' },
+      { specKey: '20mg',  ingCode: '111502ATB', brandEdi: '073400330' },
+      { specKey: '40mg',  ingCode: '111503ATB', brandEdi: '073400350' },
+      { specKey: '80mg',  ingCode: '111504ATB', brandEdi: '073400380' },
+    ],
+  },
+  'lipitor-plus': {
+    itmNmQuery: '에제티미브',
+    specs: [
+      { specKey: '10/10mg', ingCode: '633800ATB', brandEdi: '645405820' },
+      { specKey: '10/20mg', ingCode: '633900ATB', brandEdi: '645405830' },
+      { specKey: '10/40mg', ingCode: '634800ATB', brandEdi: '645405810' },
+    ],
+  },
+  lyrica: {
+    itmNmQuery: '프레가발린',
+    specs: [
+      { specKey: '25mg',  ingCode: '480405ATB', brandEdi: '073400230' },
+      { specKey: '50mg',  ingCode: '480406ATB', brandEdi: '073400240' },
+      { specKey: '75mg',  ingCode: '480401ATB', brandEdi: '073400200' },
+      { specKey: '150mg', ingCode: '480402ATB', brandEdi: '073400210' },
+      { specKey: '300mg', ingCode: '480403ATB', brandEdi: '073400220' },
+    ],
+  },
+  celebrex: {
+    itmNmQuery: '세레콕시브',
+    specs: [
+      { specKey: '100mg', ingCode: '347702ATB', brandEdi: '073400290' },
+      { specKey: '200mg', ingCode: '347701ATB', brandEdi: '073400280' },
+      { specKey: '400mg', ingCode: '347703ATB', brandEdi: '073400300' },
+    ],
+  },
+  caduet: {
+    itmNmQuery: '암로디핀베실산염/아토르바스타틴',
+    specs: [
+      { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
+      { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
+      { specKey: '5/40mg',  ingCode: '472500ATB', brandEdi: '073400170' },
+      { specKey: '10/20mg', ingCode: '518900ATB', brandEdi: '073400190' },
+    ],
+  },
 }
 
 // HIRA 약가기준정보조회서비스 (dgamtCrtrInfoService1.2)
@@ -129,7 +148,7 @@ function sleep(ms) {
 //   nomNm     = 규격
 // ─────────────────────────────────────────────────────────────────────────────
 function parseItem(item) {
-  const productName = (item.itmNm ?? '').replace(/\s*_\(.*?\)$/, '').trim()
+  const productName = (item.itmNm ?? '').replace(/\s*[\(_（].*$/, '').trim()
   const manufacturer = (item.mnfEntpNm ?? '').trim()
   const price = parseInt(item.mxCprc ?? 0, 10)
   const ingCode = (item.gnlNmCd ?? '').trim()
@@ -160,21 +179,45 @@ async function fetchByMdsCd(mdsCd) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 제네릭 일괄 조회: itmNm (성분명 키워드) 로 페이지네이션하며 전체 수집
+// ─────────────────────────────────────────────────────────────────────────────
+async function fetchAllByItmNm(itmNm) {
+  const allItems = []
+  let pageNo = 1
+  while (true) {
+    const url = buildUrl({
+      serviceKey: SERVICE_KEY,
+      numOfRows: '100',
+      pageNo: String(pageNo),
+      itmNm,
+    })
+    const { status, raw } = await fetchRaw(url)
+    if (status !== 200 || !raw) break
+    const resultCode = extractXmlValue(raw, 'resultCode')
+    if (resultCode !== '00') break
+    const items = parseXmlItems(raw)
+    allItems.push(...items)
+    if (items.length < 100) break
+    pageNo++
+    await sleep(200)
+  }
+  return allItems
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 메인 로직
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
   console.log('=== HIRA 약가 데이터 자동 업데이트 ===\n')
   console.log('서비스: dgamtCrtrInfoService1.2/getDgamtList\n')
 
-  const brandPrices = {}
-  for (const drugId of Object.keys(DRUG_CONFIGS)) {
-    brandPrices[drugId] = {}
-  }
-
-  // ── 브랜드 약가 조회 (EDI 코드 → mdsCd 파라미터)
+  // ── 1. 브랜드 약가 조회 (EDI 코드 → mdsCd 파라미터)
   console.log('■ 브랜드 약가 조회 (mdsCd=EDI코드)')
+  const brandPrices = {}
   let brandFetched = 0
-  for (const [drugId, specs] of Object.entries(DRUG_CONFIGS)) {
+
+  for (const [drugId, { specs }] of Object.entries(DRUG_CONFIGS)) {
+    brandPrices[drugId] = {}
     for (const { specKey, brandEdi } of specs) {
       const { item, error } = await fetchByMdsCd(brandEdi)
       if (error || !item) {
@@ -199,7 +242,7 @@ async function main() {
     process.exit(1)
   }
 
-  // ── drugs.js 브랜드 가격 업데이트
+  // ── 2. drugs.js 브랜드 가격 업데이트
   console.log('\n■ drugs.js 브랜드 약가 업데이트')
   let drugsSrc = fs.readFileSync('./src/data/drugs.js', 'utf-8')
 
@@ -249,7 +292,75 @@ async function main() {
 
   fs.writeFileSync('./src/data/drugs.js', drugsSrc, 'utf-8')
 
-  // ── apiMeta.js 타임스탬프 기록
+  // ── 3. 제네릭 약가 조회 (itmNm 성분명 검색 → gnlNmCd 로 분류)
+  console.log('\n■ 제네릭 약가 조회 (itmNm 성분명 검색)')
+  const genericData = {}
+  let genericFetched = 0
+
+  for (const [drugId, { itmNmQuery, specs }] of Object.entries(DRUG_CONFIGS)) {
+    process.stdout.write(`  ${drugId} (itmNm=${itmNmQuery})... `)
+    const allItems = await fetchAllByItmNm(itmNmQuery)
+    console.log(`${allItems.length}건 수집`)
+
+    // ingCode → specKey 매핑, brandEdi 집합
+    const ingCodeToSpec = {}
+    const brandEdis = new Set()
+    for (const { specKey, ingCode, brandEdi } of specs) {
+      ingCodeToSpec[ingCode] = specKey
+      brandEdis.add(brandEdi)
+    }
+
+    // gnlNmCd 기준으로 specKey별 분류 (브랜드 제외)
+    const specGroups = {}
+    for (const item of allItems) {
+      const parsed = parseItem(item)
+      if (brandEdis.has(parsed.ediCode)) continue
+      const specKey = ingCodeToSpec[parsed.ingCode]
+      if (!specKey) continue
+      if (!specGroups[specKey]) specGroups[specKey] = []
+      specGroups[specKey].push({
+        productName: parsed.productName,
+        manufacturer: parsed.manufacturer,
+        specKey,
+        insurancePrice: parsed.price,
+      })
+    }
+
+    // 규격별 가격 오름차순 정렬
+    for (const specKey of Object.keys(specGroups)) {
+      specGroups[specKey].sort((a, b) => a.insurancePrice - b.insurancePrice)
+      genericFetched += specGroups[specKey].length
+      console.log(`    ${specKey}: ${specGroups[specKey].length}개`)
+    }
+
+    genericData[drugId] = specGroups
+    await sleep(300)
+  }
+
+  // ── 4. allGenerics.js 재생성
+  console.log('\n■ allGenerics.js 재생성')
+  const today = new Date().toISOString().slice(0, 10)
+  let genericsContent = `// 자동 생성 — fetch-hira-prices.js (${today})\nconst allGenerics = {\n`
+
+  for (const [drugId, specGroups] of Object.entries(genericData)) {
+    if (Object.keys(specGroups).length === 0) continue
+    genericsContent += `  "${drugId}": [\n`
+    // specs 순서를 DRUG_CONFIGS 순서에 맞춰 정렬
+    const specOrder = DRUG_CONFIGS[drugId].specs.map(s => s.specKey)
+    for (const specKey of specOrder) {
+      const items = specGroups[specKey] ?? []
+      for (const item of items) {
+        genericsContent += `    ${JSON.stringify(item)},\n`
+      }
+    }
+    genericsContent += `  ],\n`
+  }
+
+  genericsContent += `}\n\nexport default allGenerics\n`
+  fs.writeFileSync('./src/data/allGenerics.js', genericsContent, 'utf-8')
+  console.log(`  allGenerics.js 재생성 완료 (총 ${genericFetched}개)`)
+
+  // ── 5. apiMeta.js 타임스탬프 기록
   const now = new Date().toISOString()
   const metaContent = `// 자동 생성 — fetch-hira-prices.js
 export const apiMeta = {
@@ -260,8 +371,8 @@ export const apiMeta = {
 `
   fs.writeFileSync('./src/data/apiMeta.js', metaContent, 'utf-8')
 
-  console.log(`\n✅ 완료 — 브랜드 약가 ${brandFetched}건 업데이트`)
-  console.log('   drugs.js, apiMeta.js 업데이트됨')
+  console.log(`\n✅ 완료 — 브랜드 ${brandFetched}건, 제네릭 ${genericFetched}건 업데이트`)
+  console.log('   drugs.js, allGenerics.js, apiMeta.js 업데이트됨')
 }
 
 main().catch(e => { console.error(e); process.exit(1) })
