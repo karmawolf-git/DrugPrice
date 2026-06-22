@@ -137,8 +137,11 @@ const DRUG_CONFIGS = {
     ],
   },
   caduet: {
+    // itmNm 검색으로는 INN명으로 시작하는 일부만 찾을 수 있음
+    // 나머지(상표명 제네릭)는 autoDiscover로 gnlNmCd 기반 전체 스캔
     itmNmQuery: ['아토르바스타틴칼슘', '암로디핀베실산염'],
     ingredientFilter: ['암로디핀', '아토르바스타틴'],
+    autoDiscover: true,
     specs: [
       { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
       { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
@@ -270,6 +273,65 @@ async function fetchAllByItmNm(itmNm) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 자동 탐색: gnlNmCd 기반 전체 스캔 (상표명 복합제 제네릭 수집용)
+// itmNm 전방일치로 찾을 수 없는 상표명 제네릭을 찾기 위해
+// HIRA DB 전체를 페이지네이션하며 gnlNmCd로 클라이언트 필터링
+// ─────────────────────────────────────────────────────────────────────────────
+async function autoDiscoverByIngCodes(ingCodeToSpec, allBrandEdis, existingByEdi) {
+  const ingCodeSet = new Set(Object.keys(ingCodeToSpec))
+  const found = new Map()
+
+  // 먼저 필터 없는 조회로 전체 건수 확인 (API 지원 여부 체크)
+  const testUrl = buildUrl({ serviceKey: SERVICE_KEY, numOfRows: '1', pageNo: '1' })
+  const { raw: testRaw } = await fetchRaw(testUrl)
+  const totalCount = parseInt(extractXmlValue(testRaw, 'totalCount') || '0')
+
+  if (totalCount > 0) {
+    // 전체 DB 페이지네이션 스캔
+    process.stdout.write(`  [autoDiscover] 전체 DB ${totalCount}건 스캔 중... `)
+    const pages = Math.ceil(totalCount / 100)
+    for (let page = 1; page <= pages; page++) {
+      const { raw } = await fetchRaw(buildUrl({ serviceKey: SERVICE_KEY, numOfRows: '100', pageNo: String(page) }))
+      const items = parseXmlItems(raw)
+      for (const item of items) {
+        const gnlNmCd = item.gnlNmCd?.trim()
+        const mdsCd = item.mdsCd?.trim()
+        if (gnlNmCd && ingCodeSet.has(gnlNmCd) && mdsCd
+            && !allBrandEdis.has(mdsCd) && !existingByEdi.has(mdsCd)) {
+          found.set(mdsCd, item)
+        }
+      }
+      if (items.length < 100) break
+      await sleep(200)
+    }
+    console.log(`${found.size}건 발견`)
+  } else {
+    // 필터 없는 조회 미지원 → 성분명 접두어 확장 검색으로 폴백
+    // 암로디핀+아토르바스타틴 복합제 상표명에 흔히 사용되는 접두어 목록
+    process.stdout.write('  [autoDiscover] 접두어 확장 검색... ')
+    const EXTRA_PREFIXES = [
+      '아모', '암로아', '카두', '리피', '아암', '암아',
+      '스타', '바스', '노바', '복합', '카암', '암카',
+    ]
+    for (const prefix of EXTRA_PREFIXES) {
+      const items = await fetchAllByItmNm(prefix)
+      for (const item of items) {
+        const gnlNmCd = item.gnlNmCd?.trim()
+        const mdsCd = item.mdsCd?.trim()
+        if (gnlNmCd && ingCodeSet.has(gnlNmCd) && mdsCd
+            && !allBrandEdis.has(mdsCd) && !existingByEdi.has(mdsCd)) {
+          found.set(mdsCd, item)
+        }
+      }
+      await sleep(200)
+    }
+    console.log(`${found.size}건 발견`)
+  }
+
+  return [...found.values()]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 메인 로직
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
@@ -369,7 +431,7 @@ async function main() {
   let genericFetched = 0
   const itmNmCache = {}
 
-  for (const [drugId, { itmNmQuery, ingredientFilter, specs }] of Object.entries(DRUG_CONFIGS)) {
+  for (const [drugId, { itmNmQuery, ingredientFilter, autoDiscover, specs }] of Object.entries(DRUG_CONFIGS)) {
     const allBrandEdis = new Set(specs.map(s => s.brandEdi).filter(Boolean))
     const ingCodeToSpec = {}
     for (const { specKey } of specs) {
@@ -448,6 +510,26 @@ async function main() {
         }
       }
       console.log(`  [genericEdis] ${drugId}: ${newCount}건 추가`)
+    }
+
+    // ── Step C: autoDiscover — gnlNmCd 기반 전체 스캔 (복합제 상표명 제네릭)
+    if (autoDiscover) {
+      const discovered = await autoDiscoverByIngCodes(ingCodeToSpec, allBrandEdis, allByEdi)
+      let newCount = 0
+      for (const item of discovered) {
+        const parsed = parseItem(item)
+        if (parsed.price === 0) continue
+        const specKey = ingCodeToSpec[parsed.ingCode]
+        if (!specKey) continue
+        allByEdi.set(parsed.ediCode, {
+          productName: parsed.productName,
+          manufacturer: parsed.manufacturer,
+          specKey,
+          insurancePrice: parsed.price,
+        })
+        newCount++
+      }
+      if (newCount > 0) console.log(`  [autoDiscover] ${drugId}: ${newCount}건 추가`)
     }
 
     // ── 규격별 그룹화 및 정렬
