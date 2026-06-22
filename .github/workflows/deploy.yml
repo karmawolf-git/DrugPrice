@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - claude/funny-carson-keMRz
+  schedule:
+    - cron: '0 2 1 * *'   # 매월 1일 02:00 UTC 자동 실행
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -42,6 +44,19 @@ jobs:
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: node scripts/fetch-hira-prices.js
+        continue-on-error: true
+
+      - name: 약가 변경사항 커밋 및 푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet src/data/drugs.js src/data/apiMeta.js; then
+            git add src/data/drugs.js src/data/apiMeta.js
+            git commit -m "chore: HIRA 약가 자동 업데이트 $(date -u '+%Y-%m-%d')"
+            git push
+          else
+            echo "변경사항 없음 — 커밋 생략"
+          fi
         continue-on-error: true
 
       - run: npm run build
