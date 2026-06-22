@@ -72,7 +72,7 @@ const DRUG_CONFIGS = {
     ],
   },
   caduet: {
-    itmNmQuery: '암로디핀베실산염/아토르바스타틴',
+    itmNmQuery: '암로디핀베실산염',
     specs: [
       { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
       { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
@@ -212,24 +212,30 @@ async function main() {
   console.log('서비스: dgamtCrtrInfoService1.2/getDgamtList\n')
 
   // ── 1. 브랜드 약가 조회 (EDI 코드 → mdsCd 파라미터)
+  // 브랜드 API 응답에서 실제 gnlNmCd 를 confirmedIngCodes 에 저장 →
+  // 하드코딩 ingCode 대신 사용하여 제네릭 분류 정확도 향상
   console.log('■ 브랜드 약가 조회 (mdsCd=EDI코드)')
   const brandPrices = {}
+  const confirmedIngCodes = {} // drugId → { specKey → 실제 gnlNmCd }
   let brandFetched = 0
 
   for (const [drugId, { specs }] of Object.entries(DRUG_CONFIGS)) {
     brandPrices[drugId] = {}
-    for (const { specKey, brandEdi } of specs) {
+    confirmedIngCodes[drugId] = {}
+    for (const { specKey, brandEdi, ingCode: fallbackIngCode } of specs) {
       const { item, error } = await fetchByMdsCd(brandEdi)
       if (error || !item) {
         console.warn(`  ⚠️  ${drugId} ${specKey} (${brandEdi}): ${error}`)
+        confirmedIngCodes[drugId][specKey] = fallbackIngCode
         await sleep(200)
         continue
       }
-      const { price, productName } = parseItem(item)
+      const { price, productName, ingCode: apiIngCode } = parseItem(item)
+      confirmedIngCodes[drugId][specKey] = apiIngCode || fallbackIngCode
       if (price) {
         brandPrices[drugId][specKey] = price
         brandFetched++
-        console.log(`  ${drugId} ${specKey}: ${price.toLocaleString()}원 (${productName})`)
+        console.log(`  ${drugId} ${specKey}: ${price.toLocaleString()}원 (${productName}) [gnlNmCd=${confirmedIngCodes[drugId][specKey]}]`)
       } else {
         console.warn(`  ⚠️  ${drugId} ${specKey}: mxCprc 없음`)
       }
@@ -302,11 +308,12 @@ async function main() {
     const allItems = await fetchAllByItmNm(itmNmQuery)
     console.log(`${allItems.length}건 수집`)
 
-    // ingCode → specKey 매핑, brandEdi 집합
+    // 실제 API gnlNmCd → specKey 매핑 (하드코딩 ingCode 대신 brnad 조회 결과 사용)
     const ingCodeToSpec = {}
     const brandEdis = new Set()
-    for (const { specKey, ingCode, brandEdi } of specs) {
-      ingCodeToSpec[ingCode] = specKey
+    for (const { specKey, brandEdi } of specs) {
+      const ingCode = confirmedIngCodes[drugId]?.[specKey]
+      if (ingCode) ingCodeToSpec[ingCode] = specKey
       brandEdis.add(brandEdi)
     }
 
