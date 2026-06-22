@@ -41,18 +41,20 @@ function getBody(json) {
 
 const BASE_HIRA = 'https://apis.data.go.kr/B551182'
 
-// ── msInsItemPriceInfoService (현재 사용 중인 서비스)
+// ── msInsItemPriceInfoService (이전에 사용하던 서비스 — 키 미등록)
 const CURRENT = `${BASE_HIRA}/msInsItemPriceInfoService/getMsInsItemPriceInfo`
 
-// ── 약가기준정보조회서비스 (15054445) 엔드포인트 후보
+// ── 약가기준정보조회서비스 (15054445) — 유저 확인 엔드포인트
+const DGAMT_BASE = `${BASE_HIRA}/dgamtCrtrInfoService1.2`
+
+// 오퍼레이션명 후보 (Swagger에서 확인 필요)
 const CANDIDATES = [
-  `${BASE_HIRA}/insItemPriceInfoService/getInsItemPriceInfo`,
-  `${BASE_HIRA}/DrugPrcStdInfoService/getDrugPrcStdInfo`,
-  `${BASE_HIRA}/drugPrcStdInfoService/getDrugPrcStdInfo`,
-  `${BASE_HIRA}/InsHealthDrugPrcInfoService/getInsHealthDrugPrcInfo`,
-  `${BASE_HIRA}/insHealthDrugPrcInfoService/getInsHealthDrugPrcInfo`,
-  `${BASE_HIRA}/insItemPrcInfoService/getInsItemPrcInfo`,
-  `${BASE_HIRA}/DrugPrcInfoService/getDrugPrcInfo`,
+  `${DGAMT_BASE}/getDgamtCrtrInfo`,
+  `${DGAMT_BASE}/getDgamtCrtrInfoList`,
+  `${DGAMT_BASE}/getInsHealthDrugPrcInfo`,
+  `${DGAMT_BASE}/getInsHealthDrugPrcList`,
+  `${DGAMT_BASE}/getDrugPrcInfo`,
+  `${DGAMT_BASE}/getDrugPrcList`,
 ]
 
 async function main() {
@@ -62,8 +64,8 @@ async function main() {
 
   let passed = 0, failed = 0
 
-  // ── 1. 현재 서비스 — serviceKey 인코딩 없이 전송 (수정된 방식)
-  console.log('■ msInsItemPriceInfoService (현재 서비스, 인코딩 수정)')
+  // ── 1. 이전 서비스 확인 (msInsItemPriceInfoService — 키 미등록 예상)
+  console.log('■ msInsItemPriceInfoService (이전 서비스, 키 미등록 예상)')
   process.stdout.write('  노바스크 5mg (EDI: 073400360)... ')
   const r1 = await get(CURRENT, { serviceKey: KEY, type: 'json', numOfRows: '1', ediCode: '073400360' })
   if (r1.status === 200 && getBody(r1.json)?.totalCount > 0) {
@@ -99,8 +101,8 @@ async function main() {
     console.log(`❌ HTTP ${r2.status} — ${r2.raw?.slice(0, 100)}`)
   }
 
-  // ── 3. 약가기준정보조회서비스 엔드포인트 탐색
-  console.log('\n■ 약가기준정보조회서비스 (15054445) 엔드포인트 탐색')
+  // ── 3. 약가기준정보조회서비스 (dgamtCrtrInfoService1.2) 오퍼레이션 탐색
+  console.log('\n■ 약가기준정보조회서비스 dgamtCrtrInfoService1.2 오퍼레이션 탐색')
   for (const url of CANDIDATES) {
     const name = url.split('/').slice(-2).join('/')
     process.stdout.write(`  ${name}... `)
