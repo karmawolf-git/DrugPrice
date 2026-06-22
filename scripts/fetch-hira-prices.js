@@ -8,7 +8,9 @@
  *
  * 사용 API: dgamtCrtrInfoService1.2/getDgamtList
  * 브랜드 조회: mdsCd (EDI코드) → 단건 정확 조회
- * 제네릭 조회: gnlNmCd (성분코드) 직접 검색 → 상표명 제네릭도 누락 없이 수집
+ * 제네릭 조회: itmNm (성분명 부분검색) + 페이지네이션 → gnlNmCd 로 규격 분류
+ *
+ * NOTE: gnlNmCd는 API 응답 필드이며 검색 파라미터로 지원되지 않음 (totalCount=0)
  */
 
 import https from 'https'
@@ -24,10 +26,14 @@ if (!SERVICE_KEY) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 약품별 설정
 // brandEdi: 브랜드 약품의 EDI 코드 (mdsCd 파라미터로 조회)
-// ingCode:  성분코드 (gnlNmCd — 제네릭 직접 조회 및 분류에 사용)
+// ingCode:  성분코드 (gnlNmCd — 제네릭 분류에 사용)
+// itmNmQuery: 제네릭 일괄 조회용 성분명 키워드 (itmNm 파라미터로 검색, 전방일치)
+//             복합제는 성분 순서가 다를 수 있으므로 배열로 여러 키워드 지정 가능
+// ingredientFilter: 복합제 전용 — raw itmNm에 모든 키워드가 포함된 경우 추가 수집
 // ─────────────────────────────────────────────────────────────────────────────
 const DRUG_CONFIGS = {
   norvasc: {
+    itmNmQuery: '암로디핀베실산염',
     specs: [
       { specKey: '5mg',   ingCode: '107601ATB', brandEdi: '073400360' },
       { specKey: '10mg',  ingCode: '107602ATB', brandEdi: '073400390' },
@@ -35,6 +41,7 @@ const DRUG_CONFIGS = {
     ],
   },
   lipitor: {
+    itmNmQuery: '아토르바스타틴칼슘',
     specs: [
       { specKey: '10mg',  ingCode: '111501ATB', brandEdi: '073400340' },
       { specKey: '20mg',  ingCode: '111502ATB', brandEdi: '073400330' },
@@ -43,6 +50,8 @@ const DRUG_CONFIGS = {
     ],
   },
   'lipitor-plus': {
+    itmNmQuery: ['아토르바스타틴칼슘', '에제티미브'],
+    ingredientFilter: ['에제티미브', '아토르바스타틴'],
     specs: [
       { specKey: '10/10mg', ingCode: '633800ATB', brandEdi: '645405820' },
       { specKey: '10/20mg', ingCode: '633900ATB', brandEdi: '645405830' },
@@ -50,6 +59,7 @@ const DRUG_CONFIGS = {
     ],
   },
   lyrica: {
+    itmNmQuery: '프레가발린',
     specs: [
       { specKey: '25mg',  ingCode: '480405ATB', brandEdi: '073400230' },
       { specKey: '50mg',  ingCode: '480406ATB', brandEdi: '073400240' },
@@ -59,6 +69,7 @@ const DRUG_CONFIGS = {
     ],
   },
   celebrex: {
+    itmNmQuery: '세레콕시브',
     specs: [
       { specKey: '100mg', ingCode: '347702ATB', brandEdi: '073400290' },
       { specKey: '200mg', ingCode: '347701ATB', brandEdi: '073400280' },
@@ -66,6 +77,8 @@ const DRUG_CONFIGS = {
     ],
   },
   caduet: {
+    itmNmQuery: ['아토르바스타틴칼슘', '암로디핀베실산염'],
+    ingredientFilter: ['암로디핀', '아토르바스타틴'],
     specs: [
       { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
       { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
@@ -77,6 +90,16 @@ const DRUG_CONFIGS = {
 
 // HIRA 약가기준정보조회서비스 (dgamtCrtrInfoService1.2)
 const HIRA_BASE = 'https://apis.data.go.kr/B551182/dgamtCrtrInfoService1.2/getDgamtList'
+
+// 복합제 품목명에서 "X/Ymg" 규격 추출
+function parseDoseFromName(name) {
+  const mg = '(?:밀리그램?|밀리그람|mg)'
+  let m = name.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*\\/\\s*(\\d+(?:\\.\\d+)?)\\s*${mg}`, 'i'))
+  if (m) return `${m[1]}/${m[2]}mg`
+  m = name.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*${mg}\\s*\\/\\s*(\\d+(?:\\.\\d+)?)\\s*${mg}`, 'i'))
+  if (m) return `${m[1]}/${m[2]}mg`
+  return null
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // XML 유틸리티 (HIRA API는 XML만 지원, type=json 무시됨)
@@ -138,6 +161,7 @@ function sleep(ms) {
 //   mxCprc    = 최고가격(급여상한금액)
 //   mdsCd     = 약품코드(EDI코드)
 //   gnlNmCd   = 일반명코드(성분코드)
+//   nomNm     = 규격
 // ─────────────────────────────────────────────────────────────────────────────
 function parseItem(item) {
   const productName = (item.itmNm ?? '').replace(/\s*[\(_（].*$/, '').trim()
@@ -171,10 +195,9 @@ async function fetchByMdsCd(mdsCd) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 제네릭 일괄 조회: gnlNmCd (성분코드) 로 페이지네이션하며 전체 수집
-// itmNm 접두어 검색과 달리 상표명 제네릭도 빠짐없이 조회됨
+// 제네릭 일괄 조회: itmNm (성분명 키워드) 로 페이지네이션하며 전체 수집
 // ─────────────────────────────────────────────────────────────────────────────
-async function fetchAllByGnlNmCd(gnlNmCd) {
+async function fetchAllByItmNm(itmNm) {
   const allItems = []
   let pageNo = 1
   while (true) {
@@ -182,7 +205,7 @@ async function fetchAllByGnlNmCd(gnlNmCd) {
       serviceKey: SERVICE_KEY,
       numOfRows: '100',
       pageNo: String(pageNo),
-      gnlNmCd,
+      itmNm,
     })
     const { status, raw } = await fetchRaw(url)
     if (status !== 200 || !raw) break
@@ -206,7 +229,7 @@ async function main() {
 
   // ── 1. 브랜드 약가 조회 (EDI 코드 → mdsCd 파라미터)
   // 브랜드 API 응답에서 실제 gnlNmCd 를 confirmedIngCodes 에 저장 →
-  // 하드코딩 ingCode 대신 사용하여 제네릭 조회 정확도 향상
+  // 하드코딩 ingCode 대신 사용하여 제네릭 분류 정확도 향상
   console.log('■ 브랜드 약가 조회 (mdsCd=EDI코드)')
   const brandPrices = {}
   const confirmedIngCodes = {} // drugId → { specKey → 실제 gnlNmCd }
@@ -291,55 +314,118 @@ async function main() {
 
   fs.writeFileSync('./src/data/drugs.js', drugsSrc, 'utf-8')
 
-  // ── 3. 제네릭 약가 조회 (gnlNmCd 성분코드 직접 검색)
-  // itmNm 접두어 검색 대신 gnlNmCd 로 직접 조회하여
-  // 상표명으로 등록된 제네릭까지 누락 없이 수집
-  console.log('\n■ 제네릭 약가 조회 (gnlNmCd 성분코드 직접 검색)')
+  // ── 3. 제네릭 약가 조회 (itmNm 성분명 검색 → gnlNmCd 로 분류)
+  // NOTE: gnlNmCd는 검색 파라미터 미지원 (totalCount=0). itmNm 전방일치만 사용 가능.
+  // 복합제는 ingredientFilter로 상표명 제품 일부 추가 수집 (raw itmNm 괄호 내 성분명 확인)
+  console.log('\n■ 제네릭 약가 조회 (itmNm 성분명 검색)')
   const genericData = {}
   let genericFetched = 0
-  const gnlNmCdCache = {} // ingCode → items[] (중복 API 호출 방지)
+  const itmNmCache = {}
 
-  for (const [drugId, { specs }] of Object.entries(DRUG_CONFIGS)) {
-    const allBrandEdis = new Set(specs.map(s => s.brandEdi))
-    const specGroups = {}
-    let drugTotal = 0
+  for (const [drugId, { itmNmQuery, ingredientFilter, specs }] of Object.entries(DRUG_CONFIGS)) {
+    const queries = Array.isArray(itmNmQuery) ? itmNmQuery : [itmNmQuery]
+    process.stdout.write(`  ${drugId} (itmNm=${queries.join('+')})... `)
 
-    for (const { specKey } of specs) {
+    // 쿼리별 결과 수집 후 EDI 코드 기준 중복 제거
+    const itemsByEdi = new Map()
+    for (const q of queries) {
+      if (!itmNmCache[q]) itmNmCache[q] = await fetchAllByItmNm(q)
+      for (const item of itmNmCache[q]) {
+        if (item.mdsCd && !itemsByEdi.has(item.mdsCd)) itemsByEdi.set(item.mdsCd, item)
+      }
+    }
+    const allItems = [...itemsByEdi.values()]
+    console.log(`${allItems.length}건 (쿼리: ${queries.length}개, 캐시: ${Object.keys(itmNmCache).length}종)`)
+
+    // 실제 API gnlNmCd → specKey 매핑
+    const ingCodeToSpec = {}
+    const brandEdis = new Set()
+    for (const { specKey, brandEdi } of specs) {
       const ingCode = confirmedIngCodes[drugId]?.[specKey]
-      if (!ingCode) {
-        console.log(`  ${drugId} ${specKey}: ingCode 없음, 스킵`)
-        continue
-      }
-
-      if (!gnlNmCdCache[ingCode]) {
-        process.stdout.write(`  ${drugId} ${specKey} (gnlNmCd=${ingCode})... `)
-        gnlNmCdCache[ingCode] = await fetchAllByGnlNmCd(ingCode)
-        console.log(`${gnlNmCdCache[ingCode].length}건`)
-        await sleep(200)
-      }
-
-      const items = gnlNmCdCache[ingCode]
-      const generics = items
-        .filter(item => !allBrandEdis.has((item.mdsCd ?? '').trim()))
-        .map(item => {
-          const parsed = parseItem(item)
-          return {
-            productName: parsed.productName,
-            manufacturer: parsed.manufacturer,
-            specKey,
-            insurancePrice: parsed.price,
-          }
-        })
-        .filter(g => g.insurancePrice > 0)
-
-      generics.sort((a, b) => a.insurancePrice - b.insurancePrice)
-      specGroups[specKey] = generics
-      genericFetched += generics.length
-      drugTotal += generics.length
-      console.log(`    → ${specKey}: ${generics.length}개`)
+      if (ingCode) ingCodeToSpec[ingCode] = specKey
+      brandEdis.add(brandEdi)
     }
 
-    console.log(`  ${drugId}: 총 ${drugTotal}개`)
+    // gnlNmCd 기준으로 specKey별 분류 (브랜드 제외)
+    // ingredientFilter가 있는 복합제는 품목명 성분 필터로도 추가 수집
+    const specGroups = {}
+    for (const item of allItems) {
+      const parsed = parseItem(item)
+      if (brandEdis.has(parsed.ediCode)) continue
+
+      let specKey = ingCodeToSpec[parsed.ingCode]
+
+      if (!specKey && ingredientFilter) {
+        // 원본 itmNm (괄호 내 성분명 포함) 기준으로 성분 필터
+        const rawName = (item.itmNm ?? '')
+        if (ingredientFilter.every(kw => rawName.includes(kw))) {
+          // 성분 나열 순서에 관계없이 양방향 용량 매칭
+          const doseStr = parseDoseFromName(parsed.productName)
+          if (doseStr) {
+            const [d1, d2] = doseStr.replace('mg', '').split('/')
+            const candidates = [`${d1}/${d2}mg`, `${d2}/${d1}mg`]
+            for (const { specKey: sk } of specs) {
+              if (candidates.includes(sk)) { specKey = sk; break }
+            }
+          }
+        }
+      }
+
+      if (!specKey) continue
+      if (!specGroups[specKey]) specGroups[specKey] = []
+      specGroups[specKey].push({
+        productName: parsed.productName,
+        manufacturer: parsed.manufacturer,
+        specKey,
+        insurancePrice: parsed.price,
+      })
+    }
+
+    // 규격별 가격 오름차순 정렬
+    for (const specKey of Object.keys(specGroups)) {
+      specGroups[specKey].sort((a, b) => a.insurancePrice - b.insurancePrice)
+      genericFetched += specGroups[specKey].length
+      console.log(`    ${specKey}: ${specGroups[specKey].length}개`)
+    }
+
+    // ingredientFilter 진단
+    if (ingredientFilter) {
+      let kwPass = 0, specMatched = 0
+      for (const item of allItems) {
+        const parsed = parseItem(item)
+        if (brandEdis.has(parsed.ediCode)) continue
+        if (ingCodeToSpec[parsed.ingCode]) continue
+        const rawName = (item.itmNm ?? '')
+        if (ingredientFilter.every(kw => rawName.includes(kw))) {
+          kwPass++
+          const doseStr = parseDoseFromName(parsed.productName)
+          if (doseStr) {
+            const [d1, d2] = doseStr.replace('mg', '').split('/')
+            const cands = [`${d1}/${d2}mg`, `${d2}/${d1}mg`]
+            if (specs.some(({ specKey: sk }) => cands.includes(sk))) specMatched++
+          }
+        }
+      }
+      if (kwPass > 0) {
+        console.log(`    ingredientFilter: 키워드통과 ${kwPass}건 → specKey매칭 ${specMatched}건`)
+      }
+    }
+
+    // 미분류 항목의 gnlNmCd 분포 출력 (진단용)
+    const unmatchedCounts = {}
+    for (const item of allItems) {
+      const parsed = parseItem(item)
+      if (brandEdis.has(parsed.ediCode)) continue
+      if (!ingCodeToSpec[parsed.ingCode]) {
+        unmatchedCounts[parsed.ingCode] = (unmatchedCounts[parsed.ingCode] || 0) + 1
+      }
+    }
+    const unmatchedTotal = Object.values(unmatchedCounts).reduce((a, b) => a + b, 0)
+    if (unmatchedTotal > 0) {
+      const top = Object.entries(unmatchedCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+      console.log(`    ⚠️  미분류 ${unmatchedTotal}건 — gnlNmCd: ${top.map(([k, v]) => `${k}(${v})`).join(', ')}`)
+    }
+
     genericData[drugId] = specGroups
   }
 
@@ -351,7 +437,6 @@ async function main() {
   for (const [drugId, specGroups] of Object.entries(genericData)) {
     if (Object.keys(specGroups).length === 0) continue
     genericsContent += `  "${drugId}": [\n`
-    // specs 순서를 DRUG_CONFIGS 순서에 맞춰 정렬
     const specOrder = DRUG_CONFIGS[drugId].specs.map(s => s.specKey)
     for (const specKey of specOrder) {
       const items = specGroups[specKey] ?? []
