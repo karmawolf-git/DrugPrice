@@ -356,9 +356,11 @@ async function main() {
       let specKey = ingCodeToSpec[parsed.ingCode]
 
       if (!specKey && ingredientFilter) {
-        const name = parsed.productName
-        if (ingredientFilter.every(kw => name.includes(kw))) {
-          specKey = parseDoseFromName(name)
+        // 원본 itmNm (괄호 내 성분명 포함) 기준으로 성분 필터
+        // parseItem이 괄호를 제거하므로 원본을 직접 검사
+        const rawName = (item.itmNm ?? '')
+        if (ingredientFilter.every(kw => rawName.includes(kw))) {
+          specKey = parseDoseFromName(parsed.productName)
         }
       }
 
@@ -377,6 +379,24 @@ async function main() {
       specGroups[specKey].sort((a, b) => a.insurancePrice - b.insurancePrice)
       genericFetched += specGroups[specKey].length
       console.log(`    ${specKey}: ${specGroups[specKey].length}개`)
+    }
+
+    // ingredientFilter 진단: 원본 itmNm 기준 통과 건수 출력
+    if (ingredientFilter) {
+      let kwPass = 0, parsePass = 0
+      for (const item of allItems) {
+        const parsed = parseItem(item)
+        if (brandEdis.has(parsed.ediCode)) continue
+        if (ingCodeToSpec[parsed.ingCode]) continue
+        const rawName = (item.itmNm ?? '')
+        if (ingredientFilter.every(kw => rawName.includes(kw))) {
+          kwPass++
+          if (parseDoseFromName(parsed.productName)) parsePass++
+        }
+      }
+      if (kwPass > 0) {
+        console.log(`    ingredientFilter(itmNm기준): 키워드통과 ${kwPass}건, 용량파싱 ${parsePass}건`)
+      }
     }
 
     // 미분류 항목의 gnlNmCd 분포 출력 (진단용)
