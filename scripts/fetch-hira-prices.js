@@ -25,7 +25,8 @@ if (!SERVICE_KEY) {
 // 약품별 설정
 // brandEdi: 브랜드 약품의 EDI 코드 (mdsCd 파라미터로 조회)
 // ingCode:  성분코드 (gnlNmCd — 제네릭 분류에 사용)
-// itmNmQuery: 제네릭 일괄 조회용 성분명 키워드 (itmNm 파라미터로 검색)
+// itmNmQuery: 제네릭 일괄 조회용 성분명 키워드 (itmNm 파라미터로 검색, 전방일치)
+//             복합제는 성분 순서가 다를 수 있으므로 배열로 여러 키워드 지정 가능
 // ─────────────────────────────────────────────────────────────────────────────
 const DRUG_CONFIGS = {
   norvasc: {
@@ -46,7 +47,9 @@ const DRUG_CONFIGS = {
     ],
   },
   'lipitor-plus': {
-    itmNmQuery: '아토르바스타틴칼슘',
+    // HIRA 품목명에 성분 순서가 두 가지로 등록돼 있어 양쪽 검색 필요:
+    // '아토르바스타틴칼슘/에제티미브정' 및 '에제티미브/아토르바스타틴칼슘정'
+    itmNmQuery: ['아토르바스타틴칼슘', '에제티미브'],
     specs: [
       { specKey: '10/10mg', ingCode: '633800ATB', brandEdi: '645405820' },
       { specKey: '10/20mg', ingCode: '633900ATB', brandEdi: '645405830' },
@@ -72,7 +75,8 @@ const DRUG_CONFIGS = {
     ],
   },
   caduet: {
-    itmNmQuery: '아토르바스타틴칼슘',
+    // '아토르바스타틴칼슘/암로디핀베실산염정' 및 '암로디핀베실산염/아토르바스타틴칼슘정'
+    itmNmQuery: ['아토르바스타틴칼슘', '암로디핀베실산염'],
     specs: [
       { specKey: '5/10mg',  ingCode: '472300ATB', brandEdi: '073400160' },
       { specKey: '5/20mg',  ingCode: '472400ATB', brandEdi: '073400180' },
@@ -305,10 +309,19 @@ async function main() {
   const itmNmCache = {}
 
   for (const [drugId, { itmNmQuery, specs }] of Object.entries(DRUG_CONFIGS)) {
-    process.stdout.write(`  ${drugId} (itmNm=${itmNmQuery})... `)
-    if (!itmNmCache[itmNmQuery]) itmNmCache[itmNmQuery] = await fetchAllByItmNm(itmNmQuery)
-    const allItems = itmNmCache[itmNmQuery]
-    console.log(`${allItems.length}건 (캐시: ${Object.keys(itmNmCache).length}종)`)
+    const queries = Array.isArray(itmNmQuery) ? itmNmQuery : [itmNmQuery]
+    process.stdout.write(`  ${drugId} (itmNm=${queries.join('+')})... `)
+
+    // 쿼리별 결과 수집 후 EDI 코드 기준 중복 제거
+    const itemsByEdi = new Map()
+    for (const q of queries) {
+      if (!itmNmCache[q]) itmNmCache[q] = await fetchAllByItmNm(q)
+      for (const item of itmNmCache[q]) {
+        if (item.mdsCd && !itemsByEdi.has(item.mdsCd)) itemsByEdi.set(item.mdsCd, item)
+      }
+    }
+    const allItems = [...itemsByEdi.values()]
+    console.log(`${allItems.length}건 (쿼리: ${queries.length}개, 캐시: ${Object.keys(itmNmCache).length}종)`)
 
     // 실제 API gnlNmCd → specKey 매핑 (하드코딩 ingCode 대신 brnad 조회 결과 사용)
     const ingCodeToSpec = {}
