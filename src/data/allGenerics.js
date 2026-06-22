@@ -122,7 +122,7 @@ const allGenerics = {
     {"productName":"베실로핀정10밀리그램","manufacturer":"(주)티디에스팜","specKey":"10mg","insurancePrice":0},
     {"productName":"일바스크정10mg","manufacturer":"일양바이오팜(주)","specKey":"10mg","insurancePrice":0},
     {"productName":"바로스크정10밀리그램","manufacturer":"현대약품(주)","specKey":"10mg","insurancePrice":408},
-    {"productName":"동화암���디핀베실산염정10밀리그램","manufacturer":"동화약품(주)","specKey":"10mg","insurancePrice":425},
+    {"productName":"동화암로디핀베실산염정10밀리그램","manufacturer":"동화약품(주)","specKey":"10mg","insurancePrice":425},
     {"productName":"신노바핀정10밀리그램","manufacturer":"신일제약(주)","specKey":"10mg","insurancePrice":425},
     {"productName":"뉴암로디프정10밀리그램","manufacturer":"안국뉴팜(주)","specKey":"10mg","insurancePrice":426},
     {"productName":"아모텐션정10밀리그램","manufacturer":"부광약품(주)","specKey":"10mg","insurancePrice":426},
@@ -488,6 +488,10 @@ const allGenerics = {
     {"productName":"젠토르정10/20밀리그램","manufacturer":"(주)셀릭스","specKey":"10/20mg","insurancePrice":808},
     {"productName":"아로틴플러스정10/20밀리그램","manufacturer":"(주)씨티씨바이오","specKey":"10/20mg","insurancePrice":808},
     {"productName":"에브젯정10/20밀리그램","manufacturer":"(주)이든파마","specKey":"10/20mg","insurancePrice":808},
+    {"productName":"카나브젯정30/20/10밀리그램","manufacturer":"(주)보령","specKey":"10/20mg","insurancePrice":1646},
+    {"productName":"토스젯에이정10/20/10밀리그램","manufacturer":"에스케이케미칼(주)","specKey":"10/20mg","insurancePrice":1747},
+    {"productName":"아토바미브에이정10/20/10밀리그램","manufacturer":"(주)유한양행","specKey":"10/20mg","insurancePrice":1747},
+    {"productName":"카나브젯정60/20/10밀리그램","manufacturer":"(주)보령","specKey":"10/20mg","insurancePrice":1755},
     {"productName":"아토바진플러스정10/40밀리그램","manufacturer":"영진약품(주)","specKey":"10/40mg","insurancePrice":1203},
     {"productName":"아로틴플러스정10/40밀리그램","manufacturer":"(주)씨티씨바이오","specKey":"10/40mg","insurancePrice":1203},
     {"productName":"에브젯정10/40밀리그램","manufacturer":"(주)이든파마","specKey":"10/40mg","insurancePrice":1203},
@@ -1051,7 +1055,10 @@ const allGenerics = {
   ],
   "caduet": [
     {"productName":"맥스바틴정5/10mg","manufacturer":"근화제약(주)","specKey":"5/10mg","insurancePrice":0},
+    {"productName":"토스젯에이정10/10/5밀리그램","manufacturer":"에스케이케미칼(주)","specKey":"5/10mg","insurancePrice":1689},
     {"productName":"맥스바틴정5/20mg","manufacturer":"근화제약(주)","specKey":"5/20mg","insurancePrice":0},
+    {"productName":"토스젯에이정10/20/5밀리그램","manufacturer":"에스케이케미칼(주)","specKey":"5/20mg","insurancePrice":1691},
+    {"productName":"토스젯에이정10/20/10밀리그램","manufacturer":"에스케이케미칼(주)","specKey":"10/20mg","insurancePrice":1747},
   ],
 }
 
