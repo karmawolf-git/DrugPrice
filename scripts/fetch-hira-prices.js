@@ -360,7 +360,16 @@ async function main() {
         // parseItem이 괄호를 제거하므로 원본을 직접 검사
         const rawName = (item.itmNm ?? '')
         if (ingredientFilter.every(kw => rawName.includes(kw))) {
-          specKey = parseDoseFromName(parsed.productName)
+          // 성분 나열 순서에 관계없이 양방향 용량 매칭
+          // 예: 아토르바스타틴/암로디핀정10/5mg → 10/5mg, 5/10mg 모두 시도
+          const doseStr = parseDoseFromName(parsed.productName)
+          if (doseStr) {
+            const [d1, d2] = doseStr.replace('mg', '').split('/')
+            const candidates = [`${d1}/${d2}mg`, `${d2}/${d1}mg`]
+            for (const { specKey: sk } of specs) {
+              if (candidates.includes(sk)) { specKey = sk; break }
+            }
+          }
         }
       }
 
@@ -383,7 +392,7 @@ async function main() {
 
     // ingredientFilter 진단: 원본 itmNm 기준 통과 건수 출력
     if (ingredientFilter) {
-      let kwPass = 0, parsePass = 0
+      let kwPass = 0, specMatched = 0
       for (const item of allItems) {
         const parsed = parseItem(item)
         if (brandEdis.has(parsed.ediCode)) continue
@@ -391,11 +400,16 @@ async function main() {
         const rawName = (item.itmNm ?? '')
         if (ingredientFilter.every(kw => rawName.includes(kw))) {
           kwPass++
-          if (parseDoseFromName(parsed.productName)) parsePass++
+          const doseStr = parseDoseFromName(parsed.productName)
+          if (doseStr) {
+            const [d1, d2] = doseStr.replace('mg', '').split('/')
+            const cands = [`${d1}/${d2}mg`, `${d2}/${d1}mg`]
+            if (specs.some(({ specKey: sk }) => cands.includes(sk))) specMatched++
+          }
         }
       }
       if (kwPass > 0) {
-        console.log(`    ingredientFilter(itmNm기준): 키워드통과 ${kwPass}건, 용량파싱 ${parsePass}건`)
+        console.log(`    ingredientFilter: 키워드통과 ${kwPass}건 → specKey매칭 ${specMatched}건`)
       }
     }
 
