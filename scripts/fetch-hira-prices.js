@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 /**
- * HIRA(건강보험심사평가원) API로 약가 데이터를 가져와
- * src/data/allGenerics.js 와 src/data/drugs.js 를 자동 업데이트합니다.
+ * HIRA(건강보험심사평가원) 약가기준정보조회서비스 API로 약가 데이터를 가져와
+ * src/data/drugs.js 와 src/data/apiMeta.js 를 자동 업데이트합니다.
  *
  * 실행: DATA_GO_KR_KEY=xxx node scripts/fetch-hira-prices.js
- * GitHub Actions: update-hira-prices.yml 에서 자동 실행
+ * GitHub Actions: deploy.yml 에서 자동 실행
+ *
+ * 사용 API: dgamtCrtrInfoService1.2/getDgamtList
+ * 검색 파라미터: mdsCd (EDI코드)
+ * 응답 형식: XML
+ * 주요 응답 필드: mdsCd, itmNm, mnfEntpNm, mxCprc, gnlNmCd, nomNm
  */
 
 import https from 'https'
@@ -18,8 +23,8 @@ if (!SERVICE_KEY) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 약품별 설정: ingCode → specKey 매핑 (HIRA Excel 2026.6.1 기준)
-// brandEdi: 브랜드 약품의 EDI 코드 (약가 조회용)
+// 약품별 설정
+// brandEdi: 브랜드 약품의 EDI 코드 (mdsCd 파라미터로 조회)
 // ─────────────────────────────────────────────────────────────────────────────
 const DRUG_CONFIGS = {
   norvasc: [
@@ -58,44 +63,55 @@ const DRUG_CONFIGS = {
   ],
 }
 
-// 성분코드 → {drugId, specKey} 역방향 맵 (API 결과 필터링용)
-const ING_CODE_MAP = {}
-for (const [drugId, specs] of Object.entries(DRUG_CONFIGS)) {
-  for (const s of specs) {
-    ING_CODE_MAP[s.ingCode] = { drugId, specKey: s.specKey }
+// HIRA 약가기준정보조회서비스 (dgamtCrtrInfoService1.2)
+const HIRA_BASE = 'https://apis.data.go.kr/B551182/dgamtCrtrInfoService1.2/getDgamtList'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// XML 유틸리티 (HIRA API는 XML만 지원, type=json 무시됨)
+// ─────────────────────────────────────────────────────────────────────────────
+function parseXmlItems(xml) {
+  const items = []
+  const itemRe = /<item>([\s\S]*?)<\/item>/g
+  let m
+  while ((m = itemRe.exec(xml)) !== null) {
+    const fieldRe = /<(\w+)>([^<]*)<\/\1>/g
+    const obj = {}
+    let f
+    while ((f = fieldRe.exec(m[1])) !== null) obj[f[1]] = f[2]
+    items.push(obj)
   }
+  return items
 }
 
-// HIRA drug price API endpoints
-const HIRA_BASE = 'https://apis.data.go.kr/B551182/msInsItemPriceInfoService'
+function extractXmlValue(xml, tag) {
+  const m = xml.match(new RegExp(`<${tag}>([^<]*)<\\/${tag}>`))
+  return m ? m[1] : null
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP 유틸리티
 // ─────────────────────────────────────────────────────────────────────────────
-function fetchJson(url) {
+function fetchRaw(url) {
   return new Promise((resolve, reject) => {
     const lib = url.startsWith('https') ? https : http
     const req = lib.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
+      headers: { 'User-Agent': 'Mozilla/5.0' }
     }, (res) => {
       let data = ''
       res.on('data', c => { data += c })
-      res.on('end', () => {
-        try { resolve({ status: res.statusCode, json: JSON.parse(data) }) }
-        catch { resolve({ status: res.statusCode, json: null, raw: data }) }
-      })
+      res.on('end', () => resolve({ status: res.statusCode, raw: data }))
     })
     req.on('error', reject)
     req.setTimeout(20000, () => { req.destroy(); reject(new Error('timeout')) })
   })
 }
 
-function buildUrl(endpoint, params) {
-  // serviceKey는 data.go.kr에서 이미 URL인코딩된 형식으로 발급되므로 추가 인코딩 금지
+function buildUrl(params) {
+  // serviceKey는 이미 URL인코딩된 형식으로 발급되므로 추가 인코딩 금지
   const qs = Object.entries(params)
     .map(([k, v]) => k === 'serviceKey' ? `${k}=${v}` : `${k}=${encodeURIComponent(v)}`)
     .join('&')
-  return `${HIRA_BASE}/${endpoint}?${qs}`
+  return `${HIRA_BASE}?${qs}`
 }
 
 function sleep(ms) {
@@ -103,63 +119,44 @@ function sleep(ms) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 전략 1: 성분코드(ingCode)로 페이지 조회 (numOfRows=10, 페이지네이션)
-// API numOfRows 한도가 ~10건으로 제한되어 있어 여러 페이지 조회
+// API 응답 아이템 파싱
+// dgamtCrtrInfoService1.2 응답 필드:
+//   itmNm     = 약품명
+//   mnfEntpNm = 제조사명
+//   mxCprc    = 최고가격(급여상한금액)
+//   mdsCd     = 약품코드(EDI코드)
+//   gnlNmCd   = 일반명코드(성분코드)
+//   nomNm     = 규격
 // ─────────────────────────────────────────────────────────────────────────────
-async function fetchByIngCode(ingCode) {
-  const PAGE = 10
-  let pageNo = 1
-  let totalCount = null
-  const allItems = []
-  let firstError = null
-
-  while (true) {
-    const url = buildUrl('getMsInsItemPriceInfo', {
-      serviceKey: SERVICE_KEY,
-      type: 'json',
-      numOfRows: String(PAGE),
-      pageNo: String(pageNo),
-      ingrCode: ingCode,
-    })
-    const { status, json, raw } = await fetchJson(url)
-    if (status !== 200 || !json) {
-      if (!firstError) firstError = `HTTP ${status}: ${(raw ?? '').slice(0, 200)}`
-      break
-    }
-
-    const body = json?.response?.body ?? json?.body
-    if (totalCount === null) totalCount = body?.totalCount ?? 0
-    if (totalCount === 0) break
-
-    const rawItems = body?.items?.item ?? []
-    const items = Array.isArray(rawItems) ? rawItems : (rawItems ? [rawItems] : [])
-    allItems.push(...items)
-
-    if (allItems.length >= totalCount || items.length === 0) break
-    pageNo++
-    await sleep(150)
-  }
-
-  if (firstError && allItems.length === 0) {
-    if (ingCode === Object.keys(ING_CODE_MAP)[0]) {
-      console.warn(`  첫 번째 조회 실패: ${firstError}`)
-    }
-    return null
-  }
-  return allItems.length > 0 ? allItems : null
+function parseItem(item) {
+  const productName = (item.itmNm ?? '').replace(/\s*_\(.*?\)$/, '').trim()
+  const manufacturer = (item.mnfEntpNm ?? '').trim()
+  const price = parseInt(item.mxCprc ?? 0, 10)
+  const ingCode = (item.gnlNmCd ?? '').trim()
+  const ediCode = (item.mdsCd ?? '').trim()
+  return { productName, manufacturer, price, ingCode, ediCode }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// API 응답 아이템 파싱
+// 브랜드 약가 조회: mdsCd (EDI 코드) 로 단건 조회
 // ─────────────────────────────────────────────────────────────────────────────
-function parseItem(item) {
-  // HIRA API 응답 필드명은 camelCase 또는 소문자 형식일 수 있음
-  const productName = (item.itemName ?? item.ITEM_NAME ?? '').replace(/\s*_\(.*?\)$/, '').trim()
-  const manufacturer = (item.companyName ?? item.COMPANY_NAME ?? '').trim()
-  const price = parseInt(item.maximumPrice ?? item.MAXIMUM_PRICE ?? 0, 10)
-  const ingCode = (item.ingrCode ?? item.INGR_CODE ?? item.classEsntlCode ?? '').trim()
-  const ediCode = (item.ediCode ?? item.EDI_CODE ?? '').trim()
-  return { productName, manufacturer, price, ingCode, ediCode }
+async function fetchByMdsCd(mdsCd) {
+  const url = buildUrl({
+    serviceKey: SERVICE_KEY,
+    numOfRows: '1',
+    pageNo: '1',
+    mdsCd,
+  })
+  const { status, raw } = await fetchRaw(url)
+  if (status !== 200 || !raw) {
+    return { error: `HTTP ${status}` }
+  }
+  const resultCode = extractXmlValue(raw, 'resultCode')
+  if (resultCode !== '00') {
+    return { error: `resultCode=${resultCode}` }
+  }
+  const items = parseXmlItems(raw)
+  return items.length > 0 ? { item: items[0] } : { error: 'no items' }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -167,115 +164,48 @@ function parseItem(item) {
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
   console.log('=== HIRA 약가 데이터 자동 업데이트 ===\n')
+  console.log('서비스: dgamtCrtrInfoService1.2/getDgamtList\n')
 
-  // 결과 저장용
-  const generics = {}       // { drugId: [ {productName, manufacturer, specKey, insurancePrice} ] }
-  const brandPrices = {}    // { drugId: { specKey: price } }
-
+  const brandPrices = {}
   for (const drugId of Object.keys(DRUG_CONFIGS)) {
-    generics[drugId] = []
     brandPrices[drugId] = {}
   }
 
-  // ── Step 1: 성분코드 직접 조회 (페이지당 10건, 페이지네이션)
-  console.log('■ 전략 1: 성분코드 직접 조회 (numOfRows=10)')
-  let genericsFetched = 0
-
-  for (const ingCode of Object.keys(ING_CODE_MAP)) {
-    const items = await fetchByIngCode(ingCode)
-    if (!items || items.length === 0) continue
-
-    const { drugId, specKey } = ING_CODE_MAP[ingCode]
-    for (const raw of items) {
-      const { productName, manufacturer, price } = parseItem(raw)
-      if (!productName || !price) continue
-      generics[drugId].push({ productName, manufacturer, specKey, insurancePrice: price })
-      genericsFetched++
-    }
-    console.log(`  ${drugId} ${specKey}: ${items.length}건`)
-    await sleep(100)
-  }
-
-  if (genericsFetched === 0) {
-    console.warn('  ⚠️  성분코드 조회 결과 없음 — 제네릭 데이터는 기존 유지')
-  } else {
-    console.log(`  ✅ 총 ${genericsFetched}건 제네릭 조회 완료`)
-  }
-
-  // ── Step 3: 브랜드 약가 조회 (EDI 코드, numOfRows=1 → 안정적)
-  console.log('\n■ 브랜드 약가 조회 (EDI 코드)')
+  // ── 브랜드 약가 조회 (EDI 코드 → mdsCd 파라미터)
+  console.log('■ 브랜드 약가 조회 (mdsCd=EDI코드)')
   let brandFetched = 0
   for (const [drugId, specs] of Object.entries(DRUG_CONFIGS)) {
     for (const { specKey, brandEdi } of specs) {
-      const url = buildUrl('getMsInsItemPriceInfo', {
-        serviceKey: SERVICE_KEY,
-        type: 'json',
-        numOfRows: '1',
-        pageNo: '1',
-        ediCode: brandEdi,
-      })
-      const { status, json, raw } = await fetchJson(url)
-      if (status !== 200 || !json) {
-        console.warn(`  ⚠️  ${drugId} ${specKey} (${brandEdi}): HTTP ${status} — ${(raw ?? '').slice(0, 150)}`)
+      const { item, error } = await fetchByMdsCd(brandEdi)
+      if (error || !item) {
+        console.warn(`  ⚠️  ${drugId} ${specKey} (${brandEdi}): ${error}`)
+        await sleep(200)
         continue
       }
-
-      const rawItems = json?.response?.body?.items?.item ?? json?.body?.items?.item
-      const item = Array.isArray(rawItems) ? rawItems[0] : rawItems
-      if (!item) continue
-
-      const { price } = parseItem(item)
+      const { price, productName } = parseItem(item)
       if (price) {
         brandPrices[drugId][specKey] = price
         brandFetched++
-        console.log(`  ${drugId} ${specKey}: ${price.toLocaleString()}원`)
+        console.log(`  ${drugId} ${specKey}: ${price.toLocaleString()}원 (${productName})`)
+      } else {
+        console.warn(`  ⚠️  ${drugId} ${specKey}: mxCprc 없음`)
       }
       await sleep(100)
     }
   }
+
   if (brandFetched === 0) {
     console.error('❌ 브랜드 약가 조회 실패 — API 응답 없음')
     process.exit(1)
   }
 
-  // ── Step 4: allGenerics.js 생성
-  console.log('\n■ allGenerics.js 생성')
-  const allGenericsPath = './src/data/allGenerics.js'
-  const existingContent = fs.readFileSync(allGenericsPath, 'utf-8')
-
-  let newContent = existingContent
-  for (const [drugId, items] of Object.entries(generics)) {
-    if (items.length === 0) {
-      console.warn(`  ⚠️  ${drugId}: 조회 결과 없음 — 기존 데이터 유지`)
-      continue
-    }
-
-    // 가격 순 정렬
-    const sorted = [...items].sort((a, b) => a.insurancePrice - b.insurancePrice || a.productName.localeCompare(b.productName))
-    const lines = sorted
-      .map(g => `    ${JSON.stringify({ productName: g.productName, manufacturer: g.manufacturer, specKey: g.specKey, insurancePrice: g.insurancePrice })},`)
-      .join('\n')
-    const block = `  "${drugId}": [\n${lines}\n  ],`
-
-    const regex = new RegExp(`"${drugId.replace(/-/g, '\\-')}":\\s*\\[[\\s\\S]*?\\],`, 'g')
-    if (regex.test(newContent)) {
-      newContent = newContent.replace(regex, block)
-      console.log(`  ${drugId}: ${sorted.length}건 업데이트`)
-    } else {
-      console.warn(`  ⚠️  ${drugId}: allGenerics.js에서 섹션 찾기 실패`)
-    }
-  }
-
-  fs.writeFileSync(allGenericsPath, newContent, 'utf-8')
-
-  // ── Step 5: drugs.js 브랜드 가격 업데이트
+  // ── drugs.js 브랜드 가격 업데이트
   console.log('\n■ drugs.js 브랜드 약가 업데이트')
   let drugsSrc = fs.readFileSync('./src/data/drugs.js', 'utf-8')
 
   for (const [drugId, priceMap] of Object.entries(brandPrices)) {
     if (Object.keys(priceMap).length === 0) continue
 
-    // prices 배열 위치 찾기
     const idPat = new RegExp(`id:\\s*['"]${drugId.replace(/-/g, '\\-')}['"]`)
     const drugStart = drugsSrc.search(idPat)
     if (drugStart === -1) continue
@@ -298,17 +228,15 @@ async function main() {
     let anyChanged = false
 
     for (const [specKey, newPrice] of Object.entries(priceMap)) {
-      // spec 문자열로 매칭 (e.g., spec: '5mg')
       const specEscaped = specKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       const specRe = new RegExp(
         `(spec:\\s*['"]${specEscaped}['"][^}]*insurancePrice:\\s*)(\\d+)`,
         'g'
       )
-      const replaced = updated.replace(specRe, (_, prefix, oldPrice) => {
+      updated = updated.replace(specRe, (_, prefix, oldPrice) => {
         if (parseInt(oldPrice) !== newPrice) anyChanged = true
         return `${prefix}${newPrice}`
       })
-      updated = replaced
     }
 
     if (anyChanged) {
@@ -321,20 +249,19 @@ async function main() {
 
   fs.writeFileSync('./src/data/drugs.js', drugsSrc, 'utf-8')
 
-  // ── Step 6: apiMeta.js 타임스탬프 기록
+  // ── apiMeta.js 타임스탬프 기록
   const now = new Date().toISOString()
   const metaContent = `// 자동 생성 — fetch-hira-prices.js
 export const apiMeta = {
   lastFetched: '${now}',
   source: '건강보험심사평가원 (HIRA)',
-  apiEndpoint: 'msInsItemPriceInfoService',
+  apiEndpoint: 'dgamtCrtrInfoService1.2/getDgamtList',
 }
 `
   fs.writeFileSync('./src/data/apiMeta.js', metaContent, 'utf-8')
 
-  console.log(`\n✅ 완료 — 브랜드 약가 ${brandFetched}건, 제네릭 ${genericsFetched}건 업데이트`)
-  console.log('   allGenerics.js, drugs.js, apiMeta.js 업데이트됨')
-  console.log('   git diff src/data/ 로 변경사항 확인 후 커밋하세요')
+  console.log(`\n✅ 완료 — 브랜드 약가 ${brandFetched}건 업데이트`)
+  console.log('   drugs.js, apiMeta.js 업데이트됨')
 }
 
 main().catch(e => { console.error(e); process.exit(1) })
