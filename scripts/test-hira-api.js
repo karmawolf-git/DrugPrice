@@ -146,6 +146,19 @@ async function main() {
     console.log(`❌ HTTP ${rGnl.status}`)
   }
 
+  // ── 로수젯(로수바스타틴+에제티미브) 브랜드 코드 탐색 — DRUG_CONFIGS 추가용
+  console.log('\n■ 로수젯 브랜드 코드 탐색 (itmNm=로수젯, 규격별 mdsCd/gnlNmCd/약가)')
+  const rRozu = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '30', pageNo: '1', itmNm: '로수젯' })
+  if (rRozu.status === 200) {
+    const items = parseXmlItem(rRozu.raw)
+    console.log(`  totalCount=${extractXmlValue(rRozu.raw, 'totalCount')}, ${items.length}건`)
+    for (const it of items) {
+      console.log(`   → mdsCd=${it.mdsCd} gnlNmCd=${it.gnlNmCd} mxCprc=${it.mxCprc} mnfEntpNm=${it.mnfEntpNm} itmNm=${it.itmNm}`)
+    }
+  } else {
+    console.log(`  ❌ HTTP ${rRozu.status}`)
+  }
+
   console.log(`\n${'─'.repeat(50)}`)
   console.log(`결과: ${passed}개 통과, ${failed}개 실패`)
 }
