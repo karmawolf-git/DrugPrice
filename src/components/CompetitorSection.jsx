@@ -124,6 +124,18 @@ function CompetitorTable({ drug, allDrugs }) {
     return [...extra, ...hiList]
   }, [drug.id, drug.generics])
 
+  // 동일 계열 연결 제네릭 (예: 리피토플러스에서 로수바스타틴+에제티미브 제네릭 검색)
+  // drug.relatedGenerics: [{ key, ingredient, class, label }]
+  const relatedList = useMemo(() => {
+    const out = []
+    for (const g of (drug.relatedGenerics ?? [])) {
+      for (const item of (allGenerics[g.key] ?? [])) {
+        out.push({ ...item, ingredient: g.ingredient, class: g.class, _relatedLabel: g.label })
+      }
+    }
+    return out
+  }, [drug.relatedGenerics])
+
   // 현재 약품 competitors의 class 키워드 추출 (괄호 앞 부분)
   const ownClassKeywords = useMemo(() => {
     const kw = new Set()
@@ -187,7 +199,19 @@ function CompetitorTable({ drug, allDrugs }) {
         )
         .map(c => ({ ...c, _source: 'cross' }))
 
-      list = [...competitorRows, ...genericRows, ...crossRows]
+      // 동일 계열 연결 제네릭 (로수바스타틴+에제티미브 등)
+      const relatedRows = relatedList
+        .filter(g => !competitorNames.has(g.productName ?? g.name))
+        .filter(g =>
+          (g.productName ?? g.name ?? '').toLowerCase().includes(q) ||
+          g.manufacturer.toLowerCase().includes(q) ||
+          (g.specKey ?? '').toLowerCase().includes(q) ||
+          (g.ingredient ?? '').toLowerCase().includes(q) ||
+          (g.class ?? '').toLowerCase().includes(q)
+        )
+        .map(g => ({ ...g, _source: 'related' }))
+
+      list = [...competitorRows, ...genericRows, ...crossRows, ...relatedRows]
     } else {
       list = drug.competitors.map(c => ({ ...c, _source: 'competitor' }))
     }
@@ -202,7 +226,7 @@ function CompetitorTable({ drug, allDrugs }) {
       if (va > vb) return sort.dir === 'asc' ? 1 : -1
       return 0
     })
-  }, [drug.competitors, fullList, sort, filter])
+  }, [drug.competitors, fullList, relatedList, crossDrugPool, sort, filter])
 
   const maxPrice = Math.max(
     ...rows.map(r => r.insurancePrice),
@@ -251,7 +275,7 @@ function CompetitorTable({ drug, allDrugs }) {
             <span>🔍</span>
             <span>
               경쟁품·동일성분·동일계열 전체{' '}
-              {drug.competitors.length + fullList.length + crossDrugPool.length}품목 중{' '}
+              {drug.competitors.length + fullList.length + crossDrugPool.length + relatedList.length}품목 중{' '}
               <strong>{rows.length}개</strong> 검색됨
             </span>
           </>
@@ -318,6 +342,16 @@ function CompetitorTable({ drug, allDrugs }) {
                           color: '#854d0e',
                           alignSelf: 'flex-start',
                         }}>동일 계열</span>
+                      )}
+                      {c._source === 'related' && (
+                        <span style={{
+                          fontSize: 10,
+                          padding: '1px 6px',
+                          borderRadius: 8,
+                          background: '#f3e8ff',
+                          color: '#6b21a8',
+                          alignSelf: 'flex-start',
+                        }}>{c._relatedLabel ?? '동일 계열 제네릭'}</span>
                       )}
                     </div>
                   </Td>

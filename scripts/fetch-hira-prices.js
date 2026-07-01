@@ -122,7 +122,9 @@ const DRUG_CONFIGS = {
     ],
   },
   rosuzet: {
-    // 에제티미브+로수바스타틴 복합제(로수젯 계열) 제네릭 수집
+    // 에제티미브+로수바스타틴 복합제(로수젯 계열) 제네릭 데이터 버킷.
+    // 로수젯은 자사 제품이 아니므로 독립 품목(drugs.js) 없이 데이터만 수집하여,
+    // 리피토플러스 검색의 relatedGenerics(동일 계열)로 노출됨.
     //  - itmNm: 성분명으로 시작하는 제네릭
     //  - autoDiscover: 상표명 접두어(로수/크레/에제 등) 확장 검색 → gnlNmCd 성분 필터
     // genericEdis(순차 mdsCd 조회)는 느려서 미사용 — autoDiscover가 빠르고 완전.
