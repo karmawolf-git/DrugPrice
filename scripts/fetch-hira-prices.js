@@ -121,6 +121,22 @@ const DRUG_CONFIGS = {
       },
     ],
   },
+  rosuzet: {
+    // 에제티미브+로수바스타틴 복합제(로수젯 계열) 제네릭 수집
+    //  - itmNm: 성분명으로 시작하는 제네릭
+    //  - autoDiscover: 상표명 접두어(로수/크레/에제 등) 확장 검색 → gnlNmCd 성분 필터
+    // genericEdis(순차 mdsCd 조회)는 느려서 미사용 — autoDiscover가 빠르고 완전.
+    itmNmQuery: ['로수바스타틴칼슘', '에제티미브'],
+    ingredientFilter: ['로수바스타틴', '에제티미브'],
+    autoDiscover: true,
+    discoverPrefixes: ['로수', '로바', '크레', '에제', '듀오', '로제', '슈바'],
+    specs: [
+      { specKey: '10/2.5mg', ingCode: '701100ATB', brandEdi: '643508470' },
+      { specKey: '10/5mg',   ingCode: '640700ATB', brandEdi: '643507280' },
+      { specKey: '10/10mg',  ingCode: '640800ATB', brandEdi: '643507260' },
+      { specKey: '10/20mg',  ingCode: '640900ATB', brandEdi: '643507270' },
+    ],
+  },
   lyrica: {
     itmNmQuery: '프레가발린',
     specs: [
