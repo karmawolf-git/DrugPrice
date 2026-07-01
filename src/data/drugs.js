@@ -1375,6 +1375,9 @@ export const drugs = [
       { name: '알콕시아정 30mg',     manufacturer: '한국오가논(주)',    ingredient: '에토리콕시브', insurancePrice: 311,  class: '선택적 COX-2 억제제(에토리콕시브)' },
       { name: '알콕시아정 60mg',     manufacturer: '한국오가논(주)',    ingredient: '에토리콕시브', insurancePrice: 520,  class: '선택적 COX-2 억제제(에토리콕시브)' },
       { name: '알콕시아정 90mg',     manufacturer: '한국오가논(주)',    ingredient: '에토리콕시브', insurancePrice: 693,  class: '선택적 COX-2 억제제(에토리콕시브)' },
+      { name: '비모보정 500/20mg',   manufacturer: '(주)엘지화학',      ingredient: '나프록센/에소메프라졸', insurancePrice: 715, class: 'NSAIDs+PPI 복합제(나프록센/에소메프라졸)' },
+      { name: '펠루비정 30mg',       manufacturer: '대원제약(주)',      ingredient: '펠루비프로펜', insurancePrice: 96,   class: 'NSAIDs(펠루비프로펜)' },
+      { name: '펠루비서방정 45mg',   manufacturer: '대원제약(주)',      ingredient: '펠루비프로펜', insurancePrice: 234,  class: 'NSAIDs(펠루비프로펜, 서방정)' },
     ],
     generics: [
       { productName: '콕시브캡슐 100mg',      name: '셀레콕시브캡슐 100mg', specKey: '100mg', manufacturer: '한미약품(주)',         insurancePrice: 260, approvalDate: '2015-02-27' },
