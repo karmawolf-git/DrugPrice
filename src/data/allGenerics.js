@@ -1,4 +1,4 @@
-// 자동 생성 — fetch-hira-prices.js (2026-06-22)
+// 자동 생성 — fetch-hira-prices.js (2026-07-01)
 const allGenerics = {
   "norvasc": [
     {"productName":"암베산정5밀리그램","manufacturer":"(주)아리제약","insurancePrice":224,"specKey":"5mg"},
@@ -85,7 +85,7 @@ const allGenerics = {
     {"productName":"로우딘정5mg","manufacturer":"위더스제약(주)","insurancePrice":367,"specKey":"5mg"},
     {"productName":"휴온스암로디핀정5mg","manufacturer":"(주)휴온스","insurancePrice":367,"specKey":"5mg"},
     {"productName":"바로스크정10밀리그램","manufacturer":"현대약품(주)","insurancePrice":408,"specKey":"10mg"},
-    {"productName":"동화암로디핀베실산염정10밀리그램","manufacturer":"동화약품(주)","insurancePrice":425,"specKey":"10mg"},
+    {"productName":"동화암���디핀베실산염정10밀리그램","manufacturer":"동화약품(주)","insurancePrice":425,"specKey":"10mg"},
     {"productName":"신노바핀정10밀리그램","manufacturer":"신일제약(주)","insurancePrice":425,"specKey":"10mg"},
     {"productName":"뉴암로디프정10밀리그램","manufacturer":"안국뉴팜(주)","insurancePrice":426,"specKey":"10mg"},
     {"productName":"아모텐션정10밀리그램","manufacturer":"부광약품(주)","insurancePrice":426,"specKey":"10mg"},
@@ -971,9 +971,13 @@ const allGenerics = {
     {"productName":"크리콕스캡슐400밀리그램","manufacturer":"삼진제약(주)","insurancePrice":778,"specKey":"400mg"},
   ],
   "caduet": [
+    {"productName":"암로듀엣정5/10mg","manufacturer":"(주)휴온스","insurancePrice":451,"specKey":"5/10mg"},
+    {"productName":"아토암로정5mg/10mg","manufacturer":"(주)메디카코리아","insurancePrice":623,"specKey":"5/10mg"},
+    {"productName":"암로스틴정5mg/10mg","manufacturer":"(주)킵스바이오파마","insurancePrice":623,"specKey":"5/10mg"},
     {"productName":"암바스타정5mg/10mg","manufacturer":"(주)비보존제약","insurancePrice":623,"specKey":"5/10mg"},
     {"productName":"아토노바정5/10밀리그램","manufacturer":"건일바이오팜주식회사","insurancePrice":623,"specKey":"5/10mg"},
     {"productName":"토스젯에이정10/10/5밀리그램","manufacturer":"에스케이케미칼(주)","insurancePrice":1689,"specKey":"5/10mg"},
+    {"productName":"암로듀엣정5/20mg","manufacturer":"(주)휴온스","insurancePrice":556,"specKey":"5/20mg"},
     {"productName":"아토노바정5/20밀리그램","manufacturer":"건일바이오팜주식회사","insurancePrice":769,"specKey":"5/20mg"},
     {"productName":"토스젯에이정10/20/5밀리그램","manufacturer":"에스케이케미칼(주)","insurancePrice":1691,"specKey":"5/20mg"},
     {"productName":"토스젯에이정10/20/10밀리그램","manufacturer":"에스케이케미칼(주)","insurancePrice":1747,"specKey":"10/20mg"},
