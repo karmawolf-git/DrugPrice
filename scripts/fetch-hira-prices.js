@@ -54,10 +54,14 @@ const DRUG_CONFIGS = {
     ],
   },
   'lipitor-plus': {
-    // itmNm 검색으로는 INN명으로 시작하는 일부만 찾을 수 있음
-    // 나머지(상표명 제네릭)는 genericEdis에 직접 등록
+    // 에제티미브+아토르바스타틴 복합제 제네릭 수집
+    //  - itmNm: INN명으로 시작하는 제네릭
+    //  - genericEdis: 이미 알려진 상표명 제네릭 (안정적 baseline)
+    //  - autoDiscover: 상표명 접두어 확장 검색 → gnlNmCd로 성분 필터링
+    //    (신규 상표명 제네릭까지 동적으로 포착, 하드코딩 목록 노후화 방지)
     itmNmQuery: ['아토르바스타틴칼슘', '에제티미브'],
     ingredientFilter: ['에제티미브', '아토르바스타틴'],
+    autoDiscover: true,
     specs: [
       {
         specKey: '10/10mg',
@@ -272,14 +276,38 @@ async function fetchAllByItmNm(itmNm) {
   return allItems
 }
 
+// 복합제 상표명 제네릭에 흔히 쓰이는 접두어 (성분 무관 — gnlNmCd로 최종 필터링)
+// itmNm 전방일치만 지원되므로 상표명 첫 2음절을 넓게 커버.
+// 광범위 단일음절(제/다/유 등)은 페이지네이션 폭증으로 제외.
+const DEFAULT_DISCOVER_PREFIXES = [
+  // 스타틴+에제티미브 복합제(아토젯·로바젯·리토바젯·아토엠젯·이지듀오 등) 계열
+  '아토', '아젯', '로바', '로수', '로젯', '리토', '리피', '이지', '듀오',
+  '크레', '콜메', '토르', '심바', '스타', '바이', '뉴스', '에제', '제티',
+  // 암로디핀+아토르바스타틴 복합제(카듀엣: 아모디핀·암로스타 등) 계열
+  '아모', '암로', '카두', '아암', '암아', '카암', '암카', '노바', '바스',
+]
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 자동 탐색: gnlNmCd 기반 전체 스캔 (상표명 복합제 제네릭 수집용)
+// 자동 탐색: gnlNmCd 기반 동적 수집 (상표명 복합제 제네릭용)
 // itmNm 전방일치로 찾을 수 없는 상표명 제네릭을 찾기 위해
-// HIRA DB 전체를 페이지네이션하며 gnlNmCd로 클라이언트 필터링
+//  1) 필터 없는 전체 조회 지원 시: 전체 DB 페이지네이션 후 gnlNmCd 필터
+//  2) 미지원 시: 상표명 접두어 확장 검색 후 gnlNmCd 필터
+// gnlNmCd(성분코드)로 최종 필터링하므로 접두어에 다른 성분이 섞여도 자동 제외됨
 // ─────────────────────────────────────────────────────────────────────────────
-async function autoDiscoverByIngCodes(ingCodeToSpec, allBrandEdis, existingByEdi) {
+async function autoDiscoverByIngCodes(ingCodeToSpec, allBrandEdis, existingByEdi, prefixes = DEFAULT_DISCOVER_PREFIXES) {
   const ingCodeSet = new Set(Object.keys(ingCodeToSpec))
   const found = new Map()
+
+  const collect = (items) => {
+    for (const item of items) {
+      const gnlNmCd = item.gnlNmCd?.trim()
+      const mdsCd = item.mdsCd?.trim()
+      if (gnlNmCd && ingCodeSet.has(gnlNmCd) && mdsCd
+          && !allBrandEdis.has(mdsCd) && !existingByEdi.has(mdsCd)) {
+        found.set(mdsCd, item)
+      }
+    }
+  }
 
   // 먼저 필터 없는 조회로 전체 건수 확인 (API 지원 여부 체크)
   const testUrl = buildUrl({ serviceKey: SERVICE_KEY, numOfRows: '1', pageNo: '1' })
@@ -293,36 +321,16 @@ async function autoDiscoverByIngCodes(ingCodeToSpec, allBrandEdis, existingByEdi
     for (let page = 1; page <= pages; page++) {
       const { raw } = await fetchRaw(buildUrl({ serviceKey: SERVICE_KEY, numOfRows: '100', pageNo: String(page) }))
       const items = parseXmlItems(raw)
-      for (const item of items) {
-        const gnlNmCd = item.gnlNmCd?.trim()
-        const mdsCd = item.mdsCd?.trim()
-        if (gnlNmCd && ingCodeSet.has(gnlNmCd) && mdsCd
-            && !allBrandEdis.has(mdsCd) && !existingByEdi.has(mdsCd)) {
-          found.set(mdsCd, item)
-        }
-      }
+      collect(items)
       if (items.length < 100) break
       await sleep(200)
     }
     console.log(`${found.size}건 발견`)
   } else {
-    // 필터 없는 조회 미지원 → 성분명 접두어 확장 검색으로 폴백
-    // 암로디핀+아토르바스타틴 복합제 상표명에 흔히 사용되는 접두어 목록
-    process.stdout.write('  [autoDiscover] 접두어 확장 검색... ')
-    const EXTRA_PREFIXES = [
-      '아모', '암로아', '카두', '리피', '아암', '암아',
-      '스타', '바스', '노바', '복합', '카암', '암카',
-    ]
-    for (const prefix of EXTRA_PREFIXES) {
-      const items = await fetchAllByItmNm(prefix)
-      for (const item of items) {
-        const gnlNmCd = item.gnlNmCd?.trim()
-        const mdsCd = item.mdsCd?.trim()
-        if (gnlNmCd && ingCodeSet.has(gnlNmCd) && mdsCd
-            && !allBrandEdis.has(mdsCd) && !existingByEdi.has(mdsCd)) {
-          found.set(mdsCd, item)
-        }
-      }
+    // 필터 없는 조회 미지원 → 상표명 접두어 확장 검색으로 폴백
+    process.stdout.write(`  [autoDiscover] 접두어 ${prefixes.length}종 확장 검색... `)
+    for (const prefix of prefixes) {
+      collect(await fetchAllByItmNm(prefix))
       await sleep(200)
     }
     console.log(`${found.size}건 발견`)
@@ -431,7 +439,7 @@ async function main() {
   let genericFetched = 0
   const itmNmCache = {}
 
-  for (const [drugId, { itmNmQuery, ingredientFilter, autoDiscover, specs }] of Object.entries(DRUG_CONFIGS)) {
+  for (const [drugId, { itmNmQuery, ingredientFilter, autoDiscover, discoverPrefixes, specs }] of Object.entries(DRUG_CONFIGS)) {
     const allBrandEdis = new Set(specs.map(s => s.brandEdi).filter(Boolean))
     const ingCodeToSpec = {}
     for (const { specKey } of specs) {
@@ -512,9 +520,9 @@ async function main() {
       console.log(`  [genericEdis] ${drugId}: ${newCount}건 추가`)
     }
 
-    // ── Step C: autoDiscover — gnlNmCd 기반 전체 스캔 (복합제 상표명 제네릭)
+    // ── Step C: autoDiscover — gnlNmCd 기반 동적 수집 (복합제 상표명 제네릭)
     if (autoDiscover) {
-      const discovered = await autoDiscoverByIngCodes(ingCodeToSpec, allBrandEdis, allByEdi)
+      const discovered = await autoDiscoverByIngCodes(ingCodeToSpec, allBrandEdis, allByEdi, discoverPrefixes)
       let newCount = 0
       for (const item of discovered) {
         const parsed = parseItem(item)
