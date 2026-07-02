@@ -146,26 +146,6 @@ async function main() {
     console.log(`❌ HTTP ${rGnl.status}`)
   }
 
-  // ── 피타바스타틴+에제티미브(리바로젯 계열) 탐색 — 리피토플러스 relatedGenerics 추가용
-  //    브랜드(리바로젯) 규격별 gnlNmCd/약가 + 성분 조합 제네릭 상표명/성분코드 파악
-  for (const kw of ['리바로젯', '피타바스타틴', '에제티미브']) {
-    console.log(`\n■ ${kw} 탐색 (피타바스타틴+에제티미브 복합제만 출력)`)
-    let printed = 0
-    for (let page = 1; page <= 6; page++) {
-      const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '100', pageNo: String(page), itmNm: kw })
-      if (r.status !== 200) { console.log(`  ❌ HTTP ${r.status}`); break }
-      const items = parseXmlItem(r.raw)
-      if (page === 1) console.log(`  totalCount=${extractXmlValue(r.raw, 'totalCount')}`)
-      for (const it of items) {
-        const nm = it.itmNm || ''
-        const isCombo = kw === '리바로젯' || (nm.includes('피타바스타틴') && nm.includes('에제티미브'))
-        if (isCombo) { console.log(`   → mdsCd=${it.mdsCd} gnlNmCd=${it.gnlNmCd} mxCprc=${it.mxCprc} ${it.mnfEntpNm} ${nm}`); printed++ }
-      }
-      if (items.length < 100) break
-    }
-    console.log(`  (복합제 ${printed}건)`)
-  }
-
   console.log(`\n${'─'.repeat(50)}`)
   console.log(`결과: ${passed}개 통과, ${failed}개 실패`)
 }

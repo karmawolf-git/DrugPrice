@@ -139,6 +139,22 @@ const DRUG_CONFIGS = {
       { specKey: '10/20mg',  ingCode: '640900ATB', brandEdi: '643507270' },
     ],
   },
+  pitazet: {
+    // 에제티미브+피타바스타틴 복합제(리바로젯 계열) 제네릭 데이터 버킷.
+    // 리바로젯은 자사 제품이 아니므로 독립 품목 없이 데이터만 수집하여,
+    // 리피토플러스 검색의 relatedGenerics(동일 계열)로 노출됨.
+    // 대부분 품목명에 성분이 포함돼 itmNm(피타바스타틴/에제티미브)로 수집되고,
+    // 상표명 제네릭은 autoDiscover 접두어 + gnlNmCd 성분 필터로 보강.
+    itmNmQuery: ['피타바스타틴', '에제티미브'],
+    ingredientFilter: ['피타바스타틴', '에제티미브'],
+    autoDiscover: true,
+    discoverPrefixes: ['리바로', '바로', '피타', '스타젯', '엘제', '페바', '피에', '에제'],
+    specs: [
+      { specKey: '1/10mg', ingCode: '752100ATB', brandEdi: '644915550' },
+      { specKey: '2/10mg', ingCode: '699400ATB', brandEdi: '644914960' },
+      { specKey: '4/10mg', ingCode: '699500ATB', brandEdi: '644914970' },
+    ],
+  },
   lyrica: {
     itmNmQuery: '프레가발린',
     specs: [

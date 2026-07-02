@@ -457,6 +457,7 @@ export const drugs = [
     // 로수바스타틴+에제티미브(로수젯 계열) 제네릭을 리피토플러스 검색에 포함.
     relatedGenerics: [
       { key: 'rosuzet', ingredient: '에제티미브/로수바스타틴', class: '에제티미브+스타틴', label: '로수바스타틴 계열' },
+      { key: 'pitazet', ingredient: '에제티미브/피타바스타틴', class: '에제티미브+스타틴', label: '피타바스타틴 계열' },
     ],
     generics: [
       { productName: '리토바젯정 10/10mg',  name: '에제티미브/아토르바스타틴정 10/10mg',  specKey: '10/10mg',  manufacturer: '(주)대웅제약',        insurancePrice: 637,  approvalDate: '2022-04-01' },
