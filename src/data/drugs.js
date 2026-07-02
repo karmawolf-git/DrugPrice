@@ -1744,9 +1744,9 @@ export const drugs = [
       { name: '로벨리토정 10/40mg',  manufacturer: '한미약품(주)',           ingredient: '암로디핀/로수바스타틴', insurancePrice: 1145, class: 'CCB+스타틴 복합제(로수바스타틴)' },
       { name: '트윈스타정 40/5mg',   manufacturer: '한국베링거인겔하임(주)', ingredient: '텔미사르탄/암로디핀',   insurancePrice: 697,  class: 'ARB+CCB 복합제' },
       { name: '트윈스타정 80/5mg',   manufacturer: '한국베링거인겔하임(주)', ingredient: '텔미사르탄/암로디핀',   insurancePrice: 1054, class: 'ARB+CCB 복합제' },
-      { name: '세비카정 5/20mg',     manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 729,  class: 'ARB+CCB 복합제', mdsCd: '680900030' },
-      { name: '세비카정 5/40mg',     manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 857,  class: 'ARB+CCB 복합제', mdsCd: '680900050' },
-      { name: '세비카정 10/40mg',    manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 950,  class: 'ARB+CCB 복합제', mdsCd: '680900060' },
+      { name: '세비카정 5/20mg',     manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 696,  class: 'ARB+CCB 복합제', mdsCd: '680900030' },
+      { name: '세비카정 5/40mg',     manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 755,  class: 'ARB+CCB 복합제', mdsCd: '680900050' },
+      { name: '세비카정 10/40mg',    manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 809,  class: 'ARB+CCB 복합제', mdsCd: '680900060' },
       { name: '엑스포지정 5/160mg',  manufacturer: '한국노바티스(주)',       ingredient: '암로디핀/발사르탄',     insurancePrice: 982,  class: 'ARB+CCB 복합제' },
     ],
     generics: [
