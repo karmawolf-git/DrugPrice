@@ -451,9 +451,6 @@ export const drugs = [
       { name: '리바로젯정 1/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1093, class: '에제티미브+스타틴' },
       { name: '리바로젯정 2/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1307, class: '에제티미브+스타틴' },
       { name: '리바로젯정 4/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1587, class: '에제티미브+스타틴' },
-      { name: '바이토린정 10/10mg', manufacturer: '한국오가논(주)', ingredient: '에제티미브/심바스타틴', insurancePrice: 1099, class: '에제티미브+심바스타틴' },
-      { name: '바이토린정 10/20mg', manufacturer: '한국오가논(주)', ingredient: '에제티미브/심바스타틴', insurancePrice: 1087, class: '에제티미브+심바스타틴' },
-      { name: '바이토린정 10/40mg', manufacturer: '한국오가논(주)', ingredient: '에제티미브/심바스타틴', insurancePrice: 1499, class: '에제티미브+심바스타틴' },
     ],
     // 동일 계열(에제티미브+스타틴) 제네릭도 검색 가능하도록 연결.
     // key는 allGenerics의 데이터 버킷명(fetch-hira-prices.js DRUG_CONFIGS 기준).
