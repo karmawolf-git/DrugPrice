@@ -146,24 +146,6 @@ async function main() {
     console.log(`❌ HTTP ${rGnl.status}`)
   }
 
-  // ── 피타바스타틴+에제티미브 전수 카운트 (gnlNmCd 기준) — pitazet 누락 점검용
-  console.log('\n■ 피타바스타틴+에제티미브 전수 (gnlNmCd 752100/699400/699500ATB)')
-  const PITA_CODES = new Set(['752100ATB', '699400ATB', '699500ATB'])
-  const seen = new Map()
-  for (const kw of ['에제티미브', '피타바스타틴', '젯', '에젯', '바스타']) {
-    for (let page = 1; page <= 12; page++) {
-      const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '100', pageNo: String(page), itmNm: kw })
-      if (r.status !== 200) break
-      const items = parseXmlItem(r.raw)
-      for (const it of items) if (PITA_CODES.has((it.gnlNmCd || '').trim())) seen.set(it.mdsCd, it)
-      if (items.length < 100) break
-    }
-  }
-  const byCode = {}
-  for (const it of seen.values()) byCode[it.gnlNmCd] = (byCode[it.gnlNmCd] || 0) + 1
-  console.log(`  전체 고유 ${seen.size}개, 코드별=${JSON.stringify(byCode)}`)
-  for (const it of seen.values()) console.log(`   ${it.mdsCd} ${it.gnlNmCd} ${it.mxCprc} ${it.mnfEntpNm} ${it.itmNm}`)
-
   console.log(`\n${'─'.repeat(50)}`)
   console.log(`결과: ${passed}개 통과, ${failed}개 실패`)
 }

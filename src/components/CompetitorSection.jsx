@@ -479,12 +479,19 @@ function GenericTable({ drug }) {
 
   const isSearching = filter.trim() !== ''
 
-  // 전체 HIRA DB (검색용) — 큐레이션 항목도 포함하여 검색 누락 방지
+  // 전체 HIRA DB (검색용) — 큐레이션 항목 + 동일 계열(relatedGenerics) 포함하여 검색 누락 방지
   const fullList = useMemo(() => {
     const hiList = allGenerics[drug.id] ?? []
     const hiNames = new Set(hiList.map(g => g.productName))
     const extra = drug.generics.filter(g => !hiNames.has(g.productName ?? g.name))
-    return [...extra, ...hiList]
+    // 동일 계열(예: 로수바스타틴/피타바스타틴+에제티미브) 제네릭도 검색되도록 합산
+    const related = []
+    for (const grp of (drug.relatedGenerics ?? [])) {
+      for (const it of (allGenerics[grp.key] ?? [])) {
+        related.push({ ...it, _relatedLabel: grp.label, _relatedIngredient: grp.ingredient })
+      }
+    }
+    return [...extra, ...hiList, ...related]
   }, [drug.id, drug.generics])
 
   // 전체 목록 (정렬+필터 적용)
@@ -631,6 +638,16 @@ function GenericTable({ drug }) {
                       <span style={{ fontWeight: 700 }}>{g.productName ?? g.name}</span>
                       {g.name && g.name !== g.productName && (
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{g.name}</span>
+                      )}
+                      {g._relatedLabel && (
+                        <span style={{
+                          fontSize: 10,
+                          padding: '1px 6px',
+                          borderRadius: 8,
+                          background: '#f3e8ff',
+                          color: '#6b21a8',
+                          alignSelf: 'flex-start',
+                        }}>{g._relatedLabel} · {g._relatedIngredient}</span>
                       )}
                       <SaltBadge g={g} />
                     </div>
