@@ -222,9 +222,21 @@ function itmNmHasDose(itmNm, doseCore) {
   return new RegExp(`(?<![0-9.])${esc}(?![0-9])`).test(itmNm)
 }
 
-// 제조사명 정규화 (공백 제거) 후 비교용
-function normEntp(s) {
-  return (s ?? '').replace(/\s+/g, '')
+// 제조사 핵심명 추출 (법인격 토큰·괄호·공백 제거) — "(주)종근당"→"종근당", "종근당(주)"→"종근당"
+function entpCore(s) {
+  return (s ?? '')
+    .replace(/\((?:주|유|재|사|합)\)/g, '')
+    .replace(/㈜/g, '')
+    .replace(/주식회사/g, '')
+    .replace(/[()（）\s]/g, '')
+    .trim()
+}
+
+// 제조사 일치 여부 (표기 차이 흡수: (주) 위치, 코리아 등 부분일치)
+function entpMatch(a, b) {
+  const ca = entpCore(a), cb = entpCore(b)
+  if (!ca || !cb) return false
+  return ca === cb || ca.includes(cb) || cb.includes(ca)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -510,7 +522,7 @@ async function main() {
 
       if (!compCache[keyword]) compCache[keyword] = await fetchAllByItmNm(keyword)
       const cand = compCache[keyword].filter(it =>
-        normEntp(it.mnfEntpNm) === normEntp(manuf) &&
+        entpMatch(it.mnfEntpNm, manuf) &&
         itmNmHasDose(it.itmNm || '', dose) &&
         parseInt(it.mxCprc || '0', 10) > 0
       )
