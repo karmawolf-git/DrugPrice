@@ -634,7 +634,7 @@ export const drugs = [
       { spec: '10mg',  insurancePrice: 476, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
-      { name: '헤르벤정 180mg',      manufacturer: '에이치케이이노엔(주)',      ingredient: '딜티아젬염산염',  insurancePrice: 271,  class: 'CCB(딜티아젬, 비DHP계)' },
+      { name: '헤르벤정 180mg',      manufacturer: '에이치케이이노엔(주)',      ingredient: '딜티아젬염산염',  insurancePrice: 271,  class: 'CCB(딜티아젬, 비DHP계)', mdsCd: '640003920' },
       { name: '아달라트오로스정 30mg', manufacturer: '바이엘코리아(주)',          ingredient: '니페디핀',        insurancePrice: 313,  class: 'CCB(니페디핀)' },
       { name: '딜라트렌정 12.5mg',   manufacturer: '(주)종근당',               ingredient: '카르베딜롤',      insurancePrice: 345,  class: '베타차단제+알파차단제' },
       { name: '딜라트렌정 25mg',     manufacturer: '(주)종근당',               ingredient: '카르베딜롤',      insurancePrice: 404,  class: '베타차단제+알파차단제' },
@@ -1367,9 +1367,9 @@ export const drugs = [
       { spec: '400mg', insurancePrice: 761, unit: '캡슐', reimbursementRate: '80%' },
     ],
     competitors: [
-      { name: '에어탈정 100mg',      manufacturer: '한독(주)',         ingredient: '아세클로페낙', insurancePrice: 187,  class: 'NSAIDs(아세클로페낙)' },
+      { name: '에어탈정 100mg',      manufacturer: '(주)대웅제약',     ingredient: '아세클로페낙', insurancePrice: 187,  class: 'NSAIDs(아세클로페낙)', mdsCd: '641601920' },
       { name: '낙센에프정 250mg',    manufacturer: '(주)종근당',       ingredient: '나프록센',     insurancePrice: 82,   class: 'NSAIDs(나프록센)' },
-      { name: '낙센에프정 500mg',    manufacturer: '(주)종근당',       ingredient: '나프록센',     insurancePrice: 109,  class: 'NSAIDs(나프록센)' },
+      { name: '낙센에프정 500mg',    manufacturer: '(주)종근당',       ingredient: '나프록센',     insurancePrice: 109,  class: 'NSAIDs(나프록센)', mdsCd: '643300110' },
       { name: '멜록시카캡슐 7.5mg',  manufacturer: '(주)보령',         ingredient: '멜록시캄',     insurancePrice: 230,  class: '선택적 COX-2 억제제(멜록시캄)' },
       { name: '멜록시카캡슐 15mg',   manufacturer: '(주)보령',         ingredient: '멜록시캄',     insurancePrice: 330,  class: '선택적 COX-2 억제제(멜록시캄)' },
       { name: '케토란주 30mg/mL',   manufacturer: '경동제약(주)',      ingredient: '케토롤락',     insurancePrice: 517,  class: 'NSAIDs(케토롤락, 주사제)' },
@@ -1744,9 +1744,9 @@ export const drugs = [
       { name: '로벨리토정 10/40mg',  manufacturer: '한미약품(주)',           ingredient: '암로디핀/로수바스타틴', insurancePrice: 1145, class: 'CCB+스타틴 복합제(로수바스타틴)' },
       { name: '트윈스타정 40/5mg',   manufacturer: '한국베링거인겔하임(주)', ingredient: '텔미사르탄/암로디핀',   insurancePrice: 697,  class: 'ARB+CCB 복합제' },
       { name: '트윈스타정 80/5mg',   manufacturer: '한국베링거인겔하임(주)', ingredient: '텔미사르탄/암로디핀',   insurancePrice: 1054, class: 'ARB+CCB 복합제' },
-      { name: '세비카정 5/20mg',     manufacturer: '다이이찌산쿄코리아(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 729,  class: 'ARB+CCB 복합제' },
-      { name: '세비카정 5/40mg',     manufacturer: '다이이찌산쿄코리아(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 857,  class: 'ARB+CCB 복합제' },
-      { name: '세비카정 10/40mg',    manufacturer: '다이이찌산쿄코리아(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 950,  class: 'ARB+CCB 복합제' },
+      { name: '세비카정 5/20mg',     manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 729,  class: 'ARB+CCB 복합제', mdsCd: '680900030' },
+      { name: '세비카정 5/40mg',     manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 857,  class: 'ARB+CCB 복합제', mdsCd: '680900050' },
+      { name: '세비카정 10/40mg',    manufacturer: '한국다이이찌산쿄(주)', ingredient: '올메사르탄/암로디핀',   insurancePrice: 950,  class: 'ARB+CCB 복합제', mdsCd: '680900060' },
       { name: '엑스포지정 5/160mg',  manufacturer: '한국노바티스(주)',       ingredient: '암로디핀/발사르탄',     insurancePrice: 982,  class: 'ARB+CCB 복합제' },
     ],
     generics: [

@@ -503,8 +503,9 @@ async function main() {
   // 제조사+규격이 확실히 일치할 때만 갱신하고, 미매칭 시 기존값 유지(로그).
   console.log('\n■ 경쟁품 약가 자동 갱신 (itmNm 검색 매칭)')
   {
-    // competitor 객체: { name:'...', manufacturer:'...', ingredient:'...', insurancePrice:N, class:'...' }
-    const compRe = /\{\s*name:\s*'([^']+)',\s*manufacturer:\s*'([^']+)',[^}]*?insurancePrice:\s*(\d+)[^}]*?class:\s*'[^']*'\s*\}/g
+    // competitor 객체: { name:'...', manufacturer:'...', ..., insurancePrice:N, ..., class:'...'[, mdsCd:'...'] }
+    // mdsCd가 지정된 항목은 EDI로 정확 조회, 없으면 itmNm(상표명)+규격+제조사 매칭.
+    const compRe = /\{\s*name:\s*'([^']+)',\s*manufacturer:\s*'([^']+)',[^}]*?insurancePrice:\s*(\d+)[^}]*?class:\s*'[^']*'[^}]*\}/g
     const matches = [...drugsSrc.matchAll(compRe)]
     const compCache = {}
     let compUpdated = 0, compMissed = 0
@@ -516,23 +517,36 @@ async function main() {
       if (doneKeys.has(key)) continue // 동일 경쟁품이 여러 약품에 중복 등장 시 1회 처리
       doneKeys.add(key)
 
-      const keyword = competitorKeyword(name)
-      const dose = competitorDose(name)
-      if (!keyword) { compMissed++; continue }
+      let newPrice = null
 
-      if (!compCache[keyword]) compCache[keyword] = await fetchAllByItmNm(keyword)
-      const cand = compCache[keyword].filter(it =>
-        entpMatch(it.mnfEntpNm, manuf) &&
-        itmNmHasDose(it.itmNm || '', dose) &&
-        parseInt(it.mxCprc || '0', 10) > 0
-      )
-      if (cand.length === 0) {
+      // ① mdsCd(EDI) 지정 시 정확 조회
+      const ediM = full.match(/mdsCd:\s*'([^']+)'/)
+      if (ediM) {
+        const { item } = await fetchByMdsCd(ediM[1])
+        const p = item ? parseInt(item.mxCprc || '0', 10) : 0
+        if (p > 0) newPrice = p
+      } else {
+        // ② itmNm 상표명 검색 + 규격 + 제조사 매칭
+        const keyword = competitorKeyword(name)
+        const dose = competitorDose(name)
+        if (keyword) {
+          if (!compCache[keyword]) compCache[keyword] = await fetchAllByItmNm(keyword)
+          const cand = compCache[keyword].filter(it =>
+            entpMatch(it.mnfEntpNm, manuf) &&
+            itmNmHasDose(it.itmNm || '', dose) &&
+            parseInt(it.mxCprc || '0', 10) > 0
+          )
+          // 동일 규격·제조사 후보가 여러 개면 최저가 채택 (동일 품목 이형 방지)
+          if (cand.length > 0) newPrice = Math.min(...cand.map(it => parseInt(it.mxCprc, 10)))
+        }
+      }
+
+      if (newPrice == null) {
         console.warn(`  ⚠️  미매칭(기존값 유지): ${name} (${manuf})`)
         compMissed++
+        await sleep(50)
         continue
       }
-      // 동일 규격·제조사 후보가 여러 개면 최저가 채택 (동일 품목 이형 방지)
-      const newPrice = Math.min(...cand.map(it => parseInt(it.mxCprc, 10)))
       if (newPrice !== parseInt(oldPriceStr, 10)) {
         const replaced = full.replace(/insurancePrice:\s*\d+/, `insurancePrice: ${newPrice}`)
         drugsSrc = drugsSrc.split(full).join(replaced) // 동일 문자열(중복 경쟁품) 모두 갱신
