@@ -146,6 +146,22 @@ async function main() {
     console.log(`❌ HTTP ${rGnl.status}`)
   }
 
+  // ── 미매칭 경쟁품 EDI 탐색 (mdsCd 고정용)
+  console.log('\n■ 미매칭 경쟁품 EDI 탐색')
+  for (const kw of ['헤르벤', '트윈스타', '에어탈', '낙센', '멜록시캄', '알콕시아', '로벨리토', '세비카']) {
+    console.log(`\n  [${kw}]`)
+    for (let page = 1; page <= 3; page++) {
+      const r = await get(DGAMT_URL, { serviceKey: KEY, numOfRows: '100', pageNo: String(page), itmNm: kw })
+      if (r.status !== 200) { console.log(`   ❌ HTTP ${r.status}`); break }
+      const items = parseXmlItem(r.raw)
+      for (const it of items) {
+        if (parseInt(it.mxCprc || '0', 10) > 0)
+          console.log(`   → mdsCd=${it.mdsCd} ${it.mxCprc}원 ${it.mnfEntpNm} ${it.itmNm}`)
+      }
+      if (items.length < 100) break
+    }
+  }
+
   console.log(`\n${'─'.repeat(50)}`)
   console.log(`결과: ${passed}개 통과, ${failed}개 실패`)
 }
