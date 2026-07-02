@@ -1,4 +1,4 @@
-// 자동 생성 — fetch-hira-prices.js (2026-07-01)
+// 자동 생성 — fetch-hira-prices.js (2026-07-02)
 const allGenerics = {
   "norvasc": [
     {"productName":"암베산정5밀리그램","manufacturer":"(주)아리제약","insurancePrice":224,"specKey":"5mg"},
