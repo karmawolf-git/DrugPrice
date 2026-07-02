@@ -508,27 +508,39 @@ async function main() {
       }
     }
 
-    // ── Step B: genericEdis mdsCd 직접 조회 (상표명 제네릭 수집)
+    // ── Step B: genericEdis mdsCd 직접 조회 (상표명 제네릭 수집) — 동시 조회로 가속
     const specsWithEdis = specs.filter(s => s.genericEdis?.length > 0)
     if (specsWithEdis.length > 0) {
-      let newCount = 0
+      // 중복/브랜드 제외한 조회 대상 수집
+      const targets = []
       for (const { specKey, genericEdis } of specsWithEdis) {
         for (const edi of genericEdis) {
           if (allBrandEdis.has(edi) || allByEdi.has(edi)) continue
-          const { item } = await fetchByMdsCd(edi)
-          if (!item) { await sleep(100); continue }
-          const parsed = parseItem(item)
-          if (parsed.price > 0) {
-            allByEdi.set(edi, {
-              productName: parsed.productName,
-              manufacturer: parsed.manufacturer,
-              specKey,
-              insurancePrice: parsed.price,
-            })
-            newCount++
-          }
-          await sleep(100)
+          targets.push({ edi, specKey })
         }
+      }
+      let newCount = 0
+      const CONCURRENCY = 6
+      for (let i = 0; i < targets.length; i += CONCURRENCY) {
+        const batch = targets.slice(i, i + CONCURRENCY)
+        const results = await Promise.all(batch.map(async ({ edi, specKey }) => {
+          let { item } = await fetchByMdsCd(edi)
+          if (!item) { await sleep(150); ({ item } = await fetchByMdsCd(edi)) } // 일시적 실패 1회 재시도
+          if (!item) return null
+          const parsed = parseItem(item)
+          return parsed.price > 0 ? { edi, specKey, parsed } : null
+        }))
+        for (const r of results) {
+          if (!r) continue
+          allByEdi.set(r.edi, {
+            productName: r.parsed.productName,
+            manufacturer: r.parsed.manufacturer,
+            specKey: r.specKey,
+            insurancePrice: r.parsed.price,
+          })
+          newCount++
+        }
+        await sleep(120)
       }
       console.log(`  [genericEdis] ${drugId}: ${newCount}건 추가`)
     }
