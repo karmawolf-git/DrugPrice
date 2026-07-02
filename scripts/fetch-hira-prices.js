@@ -202,6 +202,32 @@ function parseDoseFromName(name) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 경쟁품 약가 자동 매칭 유틸 (drugs.js competitors → itmNm 검색)
+// ─────────────────────────────────────────────────────────────────────────────
+// 경쟁품명에서 검색 키워드 추출: 첫 숫자/괄호 앞까지 ("아토젯정 10/10mg" → "아토젯정")
+function competitorKeyword(name) {
+  return name.replace(/\s*[\d(].*$/, '').trim()
+}
+
+// 경쟁품명에서 용량 코어 추출 ("아토젯정 10/10mg"→"10/10", "크레스토정 5mg"→"5", "울트라셋정"→null)
+function competitorDose(name) {
+  const m = name.match(/(\d[\d.]*(?:\s*\/\s*\d[\d.]*)?)\s*(?:mg|㎎|밀리그램|밀리그람|mcg|㎍|㎖|mL)/i)
+  return m ? m[1].replace(/\s+/g, '') : null
+}
+
+// itmNm에 해당 용량 코어가 (경계 포함) 존재하는지 — 단일 숫자 5가 15/25 등에 오탐되지 않도록
+function itmNmHasDose(itmNm, doseCore) {
+  if (!doseCore) return true
+  const esc = doseCore.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(?<![0-9.])${esc}(?![0-9])`).test(itmNm)
+}
+
+// 제조사명 정규화 (공백 제거) 후 비교용
+function normEntp(s) {
+  return (s ?? '').replace(/\s+/g, '')
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // XML 유틸리티 (HIRA API는 XML만 지원, type=json 무시됨)
 // ─────────────────────────────────────────────────────────────────────────────
 function parseXmlItems(xml) {
@@ -459,6 +485,53 @@ async function main() {
   }
 
   fs.writeFileSync('./src/data/drugs.js', drugsSrc, 'utf-8')
+
+  // ── 2b. 경쟁품(오리지널) 약가 자동 갱신
+  // drugs.js competitors 항목을 itmNm(상표명) 검색 + 규격 + 제조사로 매칭하여 약가 갱신.
+  // 제조사+규격이 확실히 일치할 때만 갱신하고, 미매칭 시 기존값 유지(로그).
+  console.log('\n■ 경쟁품 약가 자동 갱신 (itmNm 검색 매칭)')
+  {
+    // competitor 객체: { name:'...', manufacturer:'...', ingredient:'...', insurancePrice:N, class:'...' }
+    const compRe = /\{\s*name:\s*'([^']+)',\s*manufacturer:\s*'([^']+)',[^}]*?insurancePrice:\s*(\d+)[^}]*?class:\s*'[^']*'\s*\}/g
+    const matches = [...drugsSrc.matchAll(compRe)]
+    const compCache = {}
+    let compUpdated = 0, compMissed = 0
+    const doneKeys = new Set()
+
+    for (const mm of matches) {
+      const [full, name, manuf, oldPriceStr] = mm
+      const key = `${name}|${manuf}`
+      if (doneKeys.has(key)) continue // 동일 경쟁품이 여러 약품에 중복 등장 시 1회 처리
+      doneKeys.add(key)
+
+      const keyword = competitorKeyword(name)
+      const dose = competitorDose(name)
+      if (!keyword) { compMissed++; continue }
+
+      if (!compCache[keyword]) compCache[keyword] = await fetchAllByItmNm(keyword)
+      const cand = compCache[keyword].filter(it =>
+        normEntp(it.mnfEntpNm) === normEntp(manuf) &&
+        itmNmHasDose(it.itmNm || '', dose) &&
+        parseInt(it.mxCprc || '0', 10) > 0
+      )
+      if (cand.length === 0) {
+        console.warn(`  ⚠️  미매칭(기존값 유지): ${name} (${manuf})`)
+        compMissed++
+        continue
+      }
+      // 동일 규격·제조사 후보가 여러 개면 최저가 채택 (동일 품목 이형 방지)
+      const newPrice = Math.min(...cand.map(it => parseInt(it.mxCprc, 10)))
+      if (newPrice !== parseInt(oldPriceStr, 10)) {
+        const replaced = full.replace(/insurancePrice:\s*\d+/, `insurancePrice: ${newPrice}`)
+        drugsSrc = drugsSrc.split(full).join(replaced) // 동일 문자열(중복 경쟁품) 모두 갱신
+        console.log(`  ${name} (${manuf}): ${oldPriceStr} → ${newPrice}원`)
+      }
+      compUpdated++
+      await sleep(50)
+    }
+    console.log(`  경쟁품 매칭 ${compUpdated}건, 미매칭 ${compMissed}건`)
+    fs.writeFileSync('./src/data/drugs.js', drugsSrc, 'utf-8')
+  }
 
   // ── 3. 제네릭 약가 조회
   // genericEdis가 있는 규격: mdsCd 직접 조회 (상표명 제네릭 포함)
