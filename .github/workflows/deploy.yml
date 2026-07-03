@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 변경 파일 비교(git diff)용 전체 이력
 
       - uses: actions/setup-node@v4
         with:
@@ -34,13 +36,41 @@ jobs:
 
       - run: npm ci
 
+      # 페치 실행 여부 판단: 스케줄/수동 실행이거나 페치 스크립트가 바뀐 푸시에만 API 최신화.
+      # 프론트엔드/데이터-only 커밋은 페치(~8분) 건너뛰고 바로 빌드·배포.
+      - name: 페치 필요 여부 판단
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" != "push" ]; then
+            echo "run_fetch=true" >> "$GITHUB_OUTPUT"   # schedule / workflow_dispatch → 항상 페치
+            echo "→ ${{ github.event_name }} 이벤트: 페치 실행"
+            exit 0
+          fi
+          BEFORE="${{ github.event.before }}"
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            echo "run_fetch=true" >> "$GITHUB_OUTPUT"   # 비교 대상 없음(최초 푸시 등) → 안전하게 페치
+            echo "→ 이전 커밋 불명: 페치 실행"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BEFORE" "${{ github.sha }}")
+          echo "변경 파일:"; echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^scripts/(fetch-hira-prices|test-hira-api)\.js$'; then
+            echo "run_fetch=true" >> "$GITHUB_OUTPUT"
+            echo "→ 페치 스크립트 변경 감지: 페치 실행"
+          else
+            echo "run_fetch=false" >> "$GITHUB_OUTPUT"
+            echo "→ 프론트엔드/데이터-only: 페치 건너뜀"
+          fi
+
       - name: HIRA API 연결 진단
+        if: steps.changes.outputs.run_fetch == 'true'
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: node scripts/test-hira-api.js
         continue-on-error: true
 
       - name: HIRA API 약가 최신화
+        if: steps.changes.outputs.run_fetch == 'true'
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: node scripts/fetch-hira-prices.js
