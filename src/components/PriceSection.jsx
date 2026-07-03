@@ -1,16 +1,19 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 function fmt(n) {
   return n.toLocaleString('ko-KR') + '원'
 }
 
-function PrescriptionCost({ insurancePrice }) {
+// 선택 가능한 본인부담률 (기본 30%)
+const COPAY_RATES = [0.3, 0.4, 0.5]
+
+function PrescriptionCost({ insurancePrice, rate }) {
   const days = [30, 90, 120]
   return (
     <div style={{ display: 'flex', gap: 5 }}>
       {days.map(d => {
         const total = insurancePrice * d
-        const copay = Math.round(total * 0.2)
+        const copay = Math.round(total * rate)
         return (
           <div key={d} style={{
             display: 'flex',
@@ -81,6 +84,8 @@ function MiniPriceBar({ value, max, color }) {
 
 export default function PriceSection({ drug }) {
   const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice))
+  const [copayRate, setCopayRate] = useState(0.3)
+  const copayPct = Math.round(copayRate * 100)
   return (
     <div style={{
       background: 'var(--surface)',
@@ -108,7 +113,32 @@ export default function PriceSection({ drug }) {
           background: '#f1f5f9',
           borderRadius: 10,
         }}>1정(캡슐) 기준</span>
-        <div style={{ marginLeft: 'auto', width: 32, height: 3, borderRadius: 2, background: drug.color }} />
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>본인부담률</span>
+          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            {COPAY_RATES.map(r => {
+              const pct = Math.round(r * 100)
+              const active = r === copayRate
+              return (
+                <button
+                  key={r}
+                  onClick={() => setCopayRate(r)}
+                  style={{
+                    padding: '4px 12px',
+                    border: 'none',
+                    borderLeft: r === COPAY_RATES[0] ? 'none' : '1px solid var(--border)',
+                    background: active ? drug.color : 'var(--surface)',
+                    color: active ? '#fff' : 'var(--text-secondary)',
+                    fontWeight: active ? 700 : 500,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >{pct}%</button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -124,7 +154,7 @@ export default function PriceSection({ drug }) {
           </thead>
           <tbody>
             {drug.prices.map((p, i) => {
-              const copay = Math.round(p.insurancePrice * 0.2)
+              const copay = Math.round(p.insurancePrice * copayRate)
               return (
                 <tr key={i} style={{
                   borderBottom: '1px solid var(--border)',
@@ -152,7 +182,7 @@ export default function PriceSection({ drug }) {
                   </Td>
                   <Td>
                     <span style={{ color: '#059669', fontWeight: 600 }}>{fmt(copay)}</span>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>(20%)</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>({copayPct}%)</span>
                   </Td>
                   <Td>
                     <span style={{
@@ -162,10 +192,10 @@ export default function PriceSection({ drug }) {
                       borderRadius: 10,
                       fontSize: 12,
                       fontWeight: 600,
-                    }}>{p.reimbursementRate}</span>
+                    }}>{100 - copayPct}%</span>
                   </Td>
                   <Td style={{ minWidth: 260 }}>
-                    <PrescriptionCost insurancePrice={p.insurancePrice} />
+                    <PrescriptionCost insurancePrice={p.insurancePrice} rate={copayRate} />
                   </Td>
                 </tr>
               )
@@ -185,7 +215,7 @@ export default function PriceSection({ drug }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 13 }}>ℹ️</span>
           <span style={{ fontSize: 12, color: '#92400e' }}>
-            처방기간별 비용은 1일 1정 기준 참고값입니다. 환자 본인부담금은 일반 외래 기준 20%이며, 의료기관 종별·질환에 따라 다를 수 있습니다.
+            처방기간별 비용은 1일 1정 기준 참고값입니다. 환자 본인부담금은 선택한 본인부담률(현재 <strong>{copayPct}%</strong>) 기준이며, 기본값은 일반 외래 의원급 30%입니다. 의료기관 종별(병원 40%·종합병원 50% 등)·질환에 따라 달라지므로 상단에서 30/40/50%로 전환해 확인하세요.
           </span>
         </div>
       </div>
