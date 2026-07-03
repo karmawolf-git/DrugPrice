@@ -1,4 +1,4 @@
-// 자동 생성 — fetch-hira-prices.js (2026-07-02)
+// 자동 생성 — fetch-hira-prices.js (2026-07-03)
 const allGenerics = {
   "norvasc": [
     {"productName":"암베산정5밀리그램","manufacturer":"(주)아리제약","insurancePrice":224,"specKey":"5mg"},
@@ -990,7 +990,7 @@ const allGenerics = {
     {"productName":"쎄레콕스캡슐200밀리그램","manufacturer":"영풍제약(주)","insurancePrice":386,"specKey":"200mg"},
     {"productName":"쎄렉스타캡슐200mg","manufacturer":"(주)이든파마","insurancePrice":438,"specKey":"200mg"},
     {"productName":"파마세레콕시브캡슐200mg","manufacturer":"(주)한국파마","insurancePrice":440,"specKey":"200mg"},
-    {"productName":"제이브렉스캡슐200��리그램","manufacturer":"제이더블유중외제약(주)","insurancePrice":442,"specKey":"200mg"},
+    {"productName":"제이브렉스캡슐200밀리그램","manufacturer":"제이더블유중외제약(주)","insurancePrice":442,"specKey":"200mg"},
     {"productName":"쎄레브린캡슐200밀리그램","manufacturer":"한국코러스(주)","insurancePrice":442,"specKey":"200mg"},
     {"productName":"씨콕스캡슐200mg","manufacturer":"(주)씨엠지제약","insurancePrice":442,"specKey":"200mg"},
     {"productName":"넬슨세레콕시브캡슐200밀리그램","manufacturer":"한국넬슨제약(주)","insurancePrice":442,"specKey":"200mg"},
