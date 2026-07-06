@@ -82,9 +82,8 @@ function MiniPriceBar({ value, max, color }) {
   )
 }
 
-export default function PriceSection({ drug }) {
+export default function PriceSection({ drug, copayRate, setCopayRate }) {
   const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice))
-  const [copayRate, setCopayRate] = useState(0.3)
   const copayPct = Math.round(copayRate * 100)
   return (
     <div style={{

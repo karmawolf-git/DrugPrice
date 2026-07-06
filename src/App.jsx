@@ -10,6 +10,7 @@ import DiagnosisCodePage from './components/DiagnosisCodePage.jsx'
 export default function App() {
   const [selectedId, setSelectedId] = useState(drugs[0].id)
   const [diagDrug, setDiagDrug] = useState(null)
+  const [copayRate, setCopayRate] = useState(0.3)   // 본인부담률 (약가·경쟁품·제네릭 공유)
   const drug = drugs.find(d => d.id === selectedId)
 
   if (diagDrug) {
@@ -37,7 +38,7 @@ export default function App() {
         <TopBar drug={drug} drugs={drugs} selectedId={selectedId} onSelect={setSelectedId} />
         <DrugHeader drug={drug} />
 
-        <PriceSection drug={drug} />
+        <PriceSection drug={drug} copayRate={copayRate} setCopayRate={setCopayRate} />
 
         <div style={{
           display: 'grid',
@@ -48,7 +49,7 @@ export default function App() {
           <ReimbursementSection drug={drug} onShowDiag={() => setDiagDrug(drug)} />
         </div>
 
-        <CompetitorSection key={drug.id} drug={drug} allDrugs={drugs} />
+        <CompetitorSection key={drug.id} drug={drug} allDrugs={drugs} copayRate={copayRate} />
 
         <footer style={{
           textAlign: 'center',

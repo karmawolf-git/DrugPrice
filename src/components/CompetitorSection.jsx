@@ -24,6 +24,29 @@ function PriceBar({ value, max, color }) {
   )
 }
 
+function PrescriptionCost({ insurancePrice, rate }) {
+  const days = [30, 90, 120]
+  return (
+    <div style={{ display: 'flex', gap: 5 }}>
+      {days.map(d => {
+        const total = insurancePrice * d
+        const copay = Math.round(total * rate)
+        return (
+          <div key={d} style={{
+            display: 'flex', flexDirection: 'column', gap: 2,
+            padding: '4px 7px', background: 'var(--surface-2)',
+            borderRadius: 5, border: '1px solid var(--border)', minWidth: 76,
+          }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)' }}>{d}일 처방</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(total)}</span>
+            <span style={{ fontSize: 10, color: '#059669' }}>본인부담 {fmt(copay)}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function TableSection({ title, icon, color, children, count, controls, hint }) {
   return (
     <div style={{
@@ -109,7 +132,7 @@ function Td({ children, style }) {
 }
 
 // ── 경쟁품 테이블 ────────────────────────────────────────────
-function CompetitorTable({ drug, allDrugs }) {
+function CompetitorTable({ drug, allDrugs, copayRate }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
 
@@ -297,16 +320,15 @@ function CompetitorTable({ drug, allDrugs }) {
               <Th sortKey="name" currentSort={sort} onSort={toggleSort}>제품명</Th>
               <Th sortKey="manufacturer" currentSort={sort} onSort={toggleSort}>제조사</Th>
               <Th>성분/규격</Th>
-              <Th sortKey="class" currentSort={sort} onSort={toggleSort}>약효 분류</Th>
               <Th sortKey="insurancePrice" currentSort={sort} onSort={toggleSort}>보험급여가</Th>
               <Th>우리 제품 대비</Th>
-              <Th style={{ minWidth: 110 }}>가격 바</Th>
+              <Th style={{ minWidth: 260 }}>처방기간별 비용</Th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                   검색 결과가 없습니다
                 </td>
               </tr>
@@ -366,7 +388,6 @@ function CompetitorTable({ drug, allDrugs }) {
                       color: 'var(--text-secondary)',
                     }}>{displayIngredient}</span>
                   </Td>
-                  <Td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{displayClass ?? '-'}</Td>
                   <Td>
                     <span style={{
                       fontWeight: 700,
@@ -398,8 +419,8 @@ function CompetitorTable({ drug, allDrugs }) {
                       </div>
                     )}
                   </Td>
-                  <Td>
-                    <PriceBar value={c.insurancePrice} max={maxPrice} color={drug.color} />
+                  <Td style={{ minWidth: 260 }}>
+                    <PrescriptionCost insurancePrice={c.insurancePrice} rate={copayRate} />
                   </Td>
                 </tr>
               )
@@ -449,7 +470,7 @@ function SaltBadge({ g }) {
 const S_EQUIV = { 'S형-2.5mg': '5mg', 'S형-5mg': '10mg' }
 
 // ── 제네릭 테이블 ────────────────────────────────────────────
-function GenericTable({ drug }) {
+function GenericTable({ drug, copayRate }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
   const [specFilter, setSpecFilter] = useState('all')
@@ -614,7 +635,7 @@ function GenericTable({ drug }) {
               <Th sortKey="approvalDate" currentSort={sort} onSort={toggleSort}>허가일</Th>
               <Th sortKey="insurancePrice" currentSort={sort} onSort={toggleSort}>보험급여가</Th>
               <Th>우리 제품 대비 차액</Th>
-              <Th style={{ minWidth: 110 }}>가격 바</Th>
+              <Th style={{ minWidth: 260 }}>처방기간별 비용</Th>
             </tr>
           </thead>
           <tbody>
@@ -689,8 +710,8 @@ function GenericTable({ drug }) {
                       <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>-</span>
                     )}
                   </Td>
-                  <Td>
-                    <PriceBar value={g.insurancePrice} max={maxPrice} color="#10b981" />
+                  <Td style={{ minWidth: 260 }}>
+                    <PrescriptionCost insurancePrice={g.insurancePrice} rate={copayRate} />
                   </Td>
                 </tr>
               )
@@ -732,11 +753,11 @@ function GenericTable({ drug }) {
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────
-export default function CompetitorSection({ drug, allDrugs }) {
+export default function CompetitorSection({ drug, allDrugs, copayRate = 0.3 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <CompetitorTable drug={drug} allDrugs={allDrugs} />
-      <GenericTable drug={drug} />
+      <CompetitorTable drug={drug} allDrugs={allDrugs} copayRate={copayRate} />
+      <GenericTable drug={drug} copayRate={copayRate} />
     </div>
   )
 }
