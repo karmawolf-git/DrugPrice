@@ -49,7 +49,7 @@ export default function App() {
           <ReimbursementSection drug={drug} onShowDiag={() => setDiagDrug(drug)} />
         </div>
 
-        <CompetitorSection key={drug.id} drug={drug} allDrugs={drugs} copayRate={copayRate} />
+        <CompetitorSection key={drug.id} drug={drug} allDrugs={drugs} copayRate={copayRate} setCopayRate={setCopayRate} />
 
         <footer style={{
           textAlign: 'center',

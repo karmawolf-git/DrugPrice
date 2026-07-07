@@ -24,6 +24,39 @@ function PriceBar({ value, max, color }) {
   )
 }
 
+function CopayToggle({ copayRate, setCopayRate, color = '#0f766e' }) {
+  const RATES = [0.3, 0.4, 0.5]
+  if (!setCopayRate) return null
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>본인부담률</span>
+      <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+        {RATES.map(r => {
+          const pct = Math.round(r * 100)
+          const active = r === copayRate
+          return (
+            <button
+              key={r}
+              onClick={() => setCopayRate(r)}
+              style={{
+                padding: '5px 11px',
+                border: 'none',
+                borderLeft: r === RATES[0] ? 'none' : '1px solid var(--border)',
+                background: active ? color : 'var(--surface)',
+                color: active ? '#fff' : 'var(--text-secondary)',
+                fontWeight: active ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >{pct}%</button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function PrescriptionCost({ insurancePrice, rate }) {
   const days = [30, 90, 120]
   return (
@@ -132,7 +165,7 @@ function Td({ children, style }) {
 }
 
 // ── 경쟁품 테이블 ────────────────────────────────────────────
-function CompetitorTable({ drug, allDrugs, copayRate }) {
+function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
 
@@ -265,20 +298,23 @@ function CompetitorTable({ drug, allDrugs, copayRate }) {
       count={drug.competitors.length}
       hint={isSearching ? undefined : '검색하면 동일성분 전체 제품을 조회할 수 있습니다'}
       controls={
-        <input
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          placeholder="제품명·성분·제조사 검색"
-          style={{
-            padding: '5px 10px',
-            borderRadius: 6,
-            border: '1px solid var(--border)',
-            fontSize: 12,
-            width: 180,
-            outline: 'none',
-            fontFamily: 'inherit',
-          }}
-        />
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <CopayToggle copayRate={copayRate} setCopayRate={setCopayRate} color={drug.color} />
+          <input
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="제품명·성분·제조사 검색"
+            style={{
+              padding: '5px 10px',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              fontSize: 12,
+              width: 180,
+              outline: 'none',
+              fontFamily: 'inherit',
+            }}
+          />
+        </div>
       }
     >
       {/* 상태 배너 */}
@@ -470,7 +506,7 @@ function SaltBadge({ g }) {
 const S_EQUIV = { 'S형-2.5mg': '5mg', 'S형-5mg': '10mg' }
 
 // ── 제네릭 테이블 ────────────────────────────────────────────
-function GenericTable({ drug, copayRate }) {
+function GenericTable({ drug, copayRate, setCopayRate }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
   const [specFilter, setSpecFilter] = useState('all')
@@ -554,7 +590,8 @@ function GenericTable({ drug, copayRate }) {
       count={drug.generics.length}
       hint="검색을 이용하시면 제네릭 전 제품 검색이 가능합니다"
       controls={
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <CopayToggle copayRate={copayRate} setCopayRate={setCopayRate} color="#0f766e" />
           {specs.length > 2 && (
             <select
               value={specFilter}
@@ -753,11 +790,11 @@ function GenericTable({ drug, copayRate }) {
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────
-export default function CompetitorSection({ drug, allDrugs, copayRate = 0.3 }) {
+export default function CompetitorSection({ drug, allDrugs, copayRate = 0.3, setCopayRate }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <CompetitorTable drug={drug} allDrugs={allDrugs} copayRate={copayRate} />
-      <GenericTable drug={drug} copayRate={copayRate} />
+      <CompetitorTable drug={drug} allDrugs={allDrugs} copayRate={copayRate} setCopayRate={setCopayRate} />
+      <GenericTable drug={drug} copayRate={copayRate} setCopayRate={setCopayRate} />
     </div>
   )
 }
