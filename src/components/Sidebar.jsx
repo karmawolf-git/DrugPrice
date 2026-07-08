@@ -38,6 +38,9 @@ export default function Sidebar({ drugs, selectedId, onSelect }) {
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>
               (Drug Information)
             </div>
+            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.4 }}>
+              허가사항 · 보험 · 약가 · 경쟁품/제네릭 검색
+            </div>
           </div>
         </div>
       </div>
