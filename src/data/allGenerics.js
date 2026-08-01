@@ -138,7 +138,7 @@ const allGenerics = {
     {"productName":"토르비스정","manufacturer":"(주)퍼슨","insurancePrice":564,"specKey":"10mg"},
     {"productName":"아토바틴정10밀리그램","manufacturer":"익수제약(주)","insurancePrice":564,"specKey":"10mg"},
     {"productName":"보리아토정","manufacturer":"경진제약(주)","insurancePrice":564,"specKey":"10mg"},
-    {"productName":"알피바스타틴정10mg","manufacturer":"(주)알��바이오","insurancePrice":564,"specKey":"10mg"},
+    {"productName":"알피바스타틴정10mg","manufacturer":"(주)알���바이오","insurancePrice":564,"specKey":"10mg"},
     {"productName":"리피스타틴정10밀리그램","manufacturer":"영풍제약(주)","insurancePrice":564,"specKey":"10mg"},
     {"productName":"리피아정10mg","manufacturer":"에스에스팜(주)","insurancePrice":564,"specKey":"10mg"},
     {"productName":"아토르바디드정10밀리그램","manufacturer":"하이플생명과학(주)","insurancePrice":564,"specKey":"10mg"},
