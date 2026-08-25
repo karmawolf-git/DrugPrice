@@ -70,10 +70,51 @@ const OLD_SERVICE = `${BASE_HIRA}/msInsItemPriceInfoService/getMsInsItemPriceInf
 const DGAMT_BASE = `${BASE_HIRA}/dgamtCrtrInfoService1.2`
 const DGAMT_URL = `${DGAMT_BASE}/getDgamtList`
 
+// 저수준 네트워크 진단: 에러코드/DNS/타 호스트 연결성 확인
+async function netProbe() {
+  const dns = await import('node:dns/promises')
+  const http = await import('node:http')
+
+  const rawGet = (url, timeoutMs = 20000) => new Promise((resolve) => {
+    const start = Date.now()
+    const lib = url.startsWith('https') ? https : http
+    const req = lib.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
+      res.resume() // drain
+      res.on('end', () => resolve({ ok: true, status: res.statusCode, ms: Date.now() - start }))
+    })
+    req.on('error', e => resolve({ ok: false, code: e.code, msg: e.message, ms: Date.now() - start }))
+    req.setTimeout(timeoutMs, () => { req.destroy(); resolve({ ok: false, code: 'ETIMEDOUT_CLIENT', ms: Date.now() - start }) })
+  })
+
+  console.log('\n■ 네트워크 진단')
+  // 1) 대조군 호스트(범용 인터넷 연결성)
+  for (const url of ['https://api.github.com', 'https://www.google.com']) {
+    const r = await rawGet(url)
+    console.log(`  [대조] ${url} → ${r.ok ? 'HTTP ' + r.status : '실패(' + r.code + ')'} (${r.ms}ms)`)
+  }
+  // 2) DNS 조회
+  for (const host of ['apis.data.go.kr', 'www.data.go.kr']) {
+    try {
+      const a = await dns.lookup(host, { all: true })
+      console.log(`  [DNS] ${host} → ${a.map(x => x.address).join(', ')}`)
+    } catch (e) {
+      console.log(`  [DNS] ${host} → 실패(${e.code})`)
+    }
+  }
+  // 3) HIRA 호스트 직접 연결(HTTPS/HTTP, 상세 에러코드)
+  const hiraUrl = `https://apis.data.go.kr/B551182/dgamtCrtrInfoService1.2/getDgamtList?serviceKey=${KEY}&numOfRows=1&pageNo=1&itmNm=${encodeURIComponent('노바스크')}`
+  const rh = await rawGet(hiraUrl, 30000)
+  console.log(`  [HIRA https 30s] → ${rh.ok ? 'HTTP ' + rh.status : '실패(' + rh.code + ')'} (${rh.ms}ms)`)
+  const rHttp = await rawGet(hiraUrl.replace('https://', 'http://'), 20000)
+  console.log(`  [HIRA http 20s]  → ${rHttp.ok ? 'HTTP ' + rHttp.status : '실패(' + rHttp.code + ')'} (${rHttp.ms}ms)`)
+}
+
 async function main() {
   console.log('=== HIRA API 연결 테스트 ===\n')
   console.log(`서비스키 앞 8자리: ${KEY.slice(0, 8)}...`)
   console.log(`서비스키 형식: ${/[%+/=]/.test(KEY) ? 'URL인코딩 포함' : '순수 hex/alphanumeric'}\n`)
+
+  await netProbe()
 
   let passed = 0, failed = 0
 
