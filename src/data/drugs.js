@@ -436,9 +436,9 @@ export const drugs = [
       '1) 어린이의 손이 닿지 않는 곳에 보관한다. 2) 다른 용기에 바꾸어 넣는 것은 사고원인이 되거나 품질 유지 면에서 바람직하지 않으므로 이를 주의한다.',
     ],
     prices: [
-      { spec: '10/10mg', insurancePrice: 637,  unit: '정', reimbursementRate: '80%' },
-      { spec: '10/20mg', insurancePrice: 808,  unit: '정', reimbursementRate: '80%' },
-      { spec: '10/40mg', insurancePrice: 1413, unit: '정', reimbursementRate: '80%' },
+      { spec: '10/10mg', insurancePrice: 624,  unit: '정', reimbursementRate: '80%' },
+      { spec: '10/20mg', insurancePrice: 791,  unit: '정', reimbursementRate: '80%' },
+      { spec: '10/40mg', insurancePrice: 1301, unit: '정', reimbursementRate: '80%' },
     ],
     competitors: [
       { name: '아토젯정 10/10mg', manufacturer: '한국오가논(주)', ingredient: '에제티미브/아토르바스타틴', insurancePrice: 918,  class: '에제티미브+스타틴' },
@@ -449,8 +449,8 @@ export const drugs = [
       { name: '로수젯정 10/10mg', manufacturer: '한미약품(주)', ingredient: '로수바스타틴/에제티미브',   insurancePrice: 1087, class: '에제티미브+스타틴' },
       { name: '로수젯정 10/20mg', manufacturer: '한미약품(주)', ingredient: '로수바스타틴/에제티미브',   insurancePrice: 1093, class: '에제티미브+스타틴' },
       { name: '리바로젯정 1/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1093, class: '에제티미브+스타틴' },
-      { name: '리바로젯정 2/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1307, class: '에제티미브+스타틴' },
-      { name: '리바로젯정 4/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1587, class: '에제티미브+스타틴' },
+      { name: '리바로젯정 2/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1223, class: '에제티미브+스타틴' },
+      { name: '리바로젯정 4/10mg', manufacturer: '제이더블유중외제약(주)', ingredient: '피타바스타틴/에제티미브', insurancePrice: 1485, class: '에제티미브+스타틴' },
     ],
     // 동일 계열(에제티미브+스타틴) 제네릭도 검색 가능하도록 연결.
     // key는 allGenerics의 데이터 버킷명(fetch-hira-prices.js DRUG_CONFIGS 기준).
