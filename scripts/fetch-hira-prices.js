@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// manual-refresh: 2026-08-25b (수동 API 갱신 재시도)
+// manual-refresh: 2026-09-02 (9월 갱신 — 9/1 스케줄 무커밋 대응)
 /**
  * HIRA(건강보험심사평가원) 약가기준정보조회서비스 API로 약가 데이터를 가져와
  * src/data/drugs.js, src/data/allGenerics.js, src/data/apiMeta.js 를 자동 업데이트합니다.

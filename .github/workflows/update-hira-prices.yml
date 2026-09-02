@@ -1,9 +1,9 @@
 name: HIRA 약가 자동 업데이트
 
+# 월간 자동 갱신은 deploy.yml(매월 1일 스케줄)이 단독으로 담당한다.
+# 이 워크플로는 수동 실행(workflow_dispatch) 전용 — 스케줄 중복/경합 및
+# apiMeta.js 미커밋으로 인한 '갱신 시각' 정체 문제를 피하기 위함.
 on:
-  schedule:
-    # 매월 1일 오전 9시 (KST = UTC+9 → UTC 0시)
-    - cron: '0 0 1 * *'
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/data/allGenerics.js src/data/drugs.js
+          git add src/data/allGenerics.js src/data/drugs.js src/data/apiMeta.js
           if git diff --cached --quiet; then
             echo "변경사항 없음 — 약가 최신 상태"
           else
