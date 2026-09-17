@@ -1,17 +1,25 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import drugs from './data/drugs.js'
 import Sidebar from './components/Sidebar.jsx'
 import DrugHeader from './components/DrugHeader.jsx'
 import ApprovalSection from './components/ApprovalSection.jsx'
 import PriceSection from './components/PriceSection.jsx'
-import CompetitorSection from './components/CompetitorSection.jsx'
+import CompetitorSection, { CompareTray } from './components/CompetitorSection.jsx'
 import DiagnosisCodePage from './components/DiagnosisCodePage.jsx'
 
 export default function App() {
   const [selectedId, setSelectedId] = useState(drugs[0].id)
   const [diagDrug, setDiagDrug] = useState(null)
   const [copayRate, setCopayRate] = useState(0.3)   // 본인부담률 (약가·경쟁품·제네릭 공유)
+  const [compareItems, setCompareItems] = useState([])
   const drug = drugs.find(d => d.id === selectedId)
+
+  useEffect(() => setCompareItems([]), [selectedId])
+
+  const toggleCompare = item => setCompareItems(prev => {
+    const exists = prev.some(selected => selected.compareKey === item.compareKey)
+    return exists ? prev.filter(selected => selected.compareKey !== item.compareKey) : [...prev, item]
+  })
 
   if (diagDrug) {
     return <DiagnosisCodePage drug={diagDrug} onClose={() => setDiagDrug(null)} />
@@ -38,7 +46,13 @@ export default function App() {
         <TopBar drug={drug} drugs={drugs} selectedId={selectedId} onSelect={setSelectedId} />
         <DrugHeader drug={drug} />
 
-        <PriceSection drug={drug} copayRate={copayRate} setCopayRate={setCopayRate} />
+        <PriceSection
+          drug={drug}
+          copayRate={copayRate}
+          setCopayRate={setCopayRate}
+          compareItems={compareItems}
+          onToggleCompare={toggleCompare}
+        />
 
         <div style={{
           display: 'grid',
@@ -49,7 +63,22 @@ export default function App() {
           <ReimbursementSection drug={drug} onShowDiag={() => setDiagDrug(drug)} />
         </div>
 
-        <CompetitorSection key={drug.id} drug={drug} allDrugs={drugs} copayRate={copayRate} setCopayRate={setCopayRate} />
+        <CompetitorSection
+          key={drug.id}
+          drug={drug}
+          allDrugs={drugs}
+          copayRate={copayRate}
+          setCopayRate={setCopayRate}
+          compareItems={compareItems}
+          onToggleCompare={toggleCompare}
+        />
+
+        <CompareTray
+          items={compareItems}
+          referencePrice={drug.prices[0]?.insurancePrice ?? 0}
+          copayRate={copayRate}
+          onClear={() => setCompareItems([])}
+        />
 
         <footer style={{
           textAlign: 'center',

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/funny-carson-keMRz
+      - codex/drug-comparison
   schedule:
     - cron: '0 2 1 * *'   # 매월 1일 02:00 UTC 자동 실행
   workflow_dispatch:

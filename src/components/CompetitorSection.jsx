@@ -165,7 +165,19 @@ function Td({ children, style }) {
 }
 
 // ── 경쟁품 테이블 ────────────────────────────────────────────
-function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate }) {
+function CompareCheckbox({ item, checked, onToggle, color }) {
+  return (
+    <input
+      type="checkbox"
+      aria-label={`${item.name ?? item.productName} 비교 선택`}
+      checked={checked}
+      onChange={() => onToggle(item)}
+      style={{ accentColor: color, width: 16, height: 16, cursor: 'pointer' }}
+    />
+  )
+}
+
+function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate, compareItems, onToggleCompare }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
 
@@ -353,6 +365,7 @@ function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--surface-2)', borderBottom: '2px solid var(--border)' }}>
+              <Th style={{ width: 48 }}>선택</Th>
               <Th sortKey="name" currentSort={sort} onSort={toggleSort}>제품명</Th>
               <Th sortKey="manufacturer" currentSort={sort} onSort={toggleSort}>제조사</Th>
               <Th>성분/규격</Th>
@@ -364,7 +377,7 @@ function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                   검색 결과가 없습니다
                 </td>
               </tr>
@@ -378,6 +391,15 @@ function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate }) {
               const isSame = diff === 0
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
+                  <Td>
+                    <CompareCheckbox
+                      item={{ ...c, name: displayName, compareKey: `item-${c._source}-${displayName}-${c.specKey ?? c.spec ?? ''}`,
+                        type: c._source === 'generic' || c._source === 'related' ? '제네릭' : '경쟁약품', color: drug.color }}
+                      checked={compareItems.some(item => item.compareKey === `item-${c._source}-${displayName}-${c.specKey ?? c.spec ?? ''}`)}
+                      onToggle={onToggleCompare}
+                      color={drug.color}
+                    />
+                  </Td>
                   <Td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <span style={{ fontWeight: 600 }}>{displayName}</span>
@@ -506,7 +528,7 @@ function SaltBadge({ g }) {
 const S_EQUIV = { 'S형-2.5mg': '5mg', 'S형-5mg': '10mg' }
 
 // ── 제네릭 테이블 ────────────────────────────────────────────
-function GenericTable({ drug, copayRate, setCopayRate }) {
+function GenericTable({ drug, copayRate, setCopayRate, compareItems, onToggleCompare }) {
   const [sort, setSort] = useState({ key: 'insurancePrice', dir: 'asc' })
   const [filter, setFilter] = useState('')
   const [specFilter, setSpecFilter] = useState('all')
@@ -667,6 +689,7 @@ function GenericTable({ drug, copayRate, setCopayRate }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--surface-2)', borderBottom: '2px solid var(--border)' }}>
+              <Th style={{ width: 48 }}>선택</Th>
               <Th sortKey="name" currentSort={sort} onSort={toggleSort}>제품명</Th>
               <Th sortKey="manufacturer" currentSort={sort} onSort={toggleSort}>제조사</Th>
               <Th sortKey="approvalDate" currentSort={sort} onSort={toggleSort}>허가일</Th>
@@ -678,7 +701,7 @@ function GenericTable({ drug, copayRate, setCopayRate }) {
           <tbody>
             {displayRows.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                   검색 결과가 없습니다
                 </td>
               </tr>
@@ -691,6 +714,14 @@ function GenericTable({ drug, copayRate, setCopayRate }) {
 
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
+                  <Td>
+                    <CompareCheckbox
+                      item={{ ...g, name: g.productName ?? g.name, compareKey: `generic-${g.productName ?? g.name}-${g.specKey ?? ''}`, type: '제네릭', color: '#0f766e' }}
+                      checked={compareItems.some(item => item.compareKey === `generic-${g.productName ?? g.name}-${g.specKey ?? ''}`)}
+                      onToggle={onToggleCompare}
+                      color="#0f766e"
+                    />
+                  </Td>
                   <Td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                       <span style={{ fontWeight: 700 }}>{g.productName ?? g.name}</span>
@@ -790,11 +821,46 @@ function GenericTable({ drug, copayRate, setCopayRate }) {
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────
-export default function CompetitorSection({ drug, allDrugs, copayRate = 0.3, setCopayRate }) {
+export default function CompetitorSection({ drug, allDrugs, copayRate = 0.3, setCopayRate, compareItems = [], onToggleCompare }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <CompetitorTable drug={drug} allDrugs={allDrugs} copayRate={copayRate} setCopayRate={setCopayRate} />
-      <GenericTable drug={drug} copayRate={copayRate} setCopayRate={setCopayRate} />
+      <CompetitorTable drug={drug} allDrugs={allDrugs} copayRate={copayRate} setCopayRate={setCopayRate} compareItems={compareItems} onToggleCompare={onToggleCompare} />
+      <GenericTable drug={drug} copayRate={copayRate} setCopayRate={setCopayRate} compareItems={compareItems} onToggleCompare={onToggleCompare} />
     </div>
+  )
+}
+
+export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear }) {
+  if (!items.length) return null
+  return (
+    <section style={{ background: '#0f172a', color: '#fff', borderRadius: 'var(--radius)', padding: '16px 20px', boxShadow: 'var(--shadow-lg)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <span style={{ fontWeight: 800 }}>⚖️ 선택 항목 비교</span>
+        <span style={{ fontSize: 12, color: '#cbd5e1' }}>{items.length}개 선택</span>
+        <button onClick={onClear} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit' }}>전체 해제</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+        {items.map(item => {
+          const diff = item.insurancePrice - referencePrice
+          return <div key={item.compareKey} style={{ background: '#1e293b', borderRadius: 8, padding: '10px 12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 11, color: '#93c5fd' }}>{item.type}</span>
+              <strong style={{ fontSize: 14 }}>{fmt(item.insurancePrice)}</strong>
+            </div>
+            <div style={{ marginTop: 3, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+            <div style={{ marginTop: 4, fontSize: 11, color: diff < 0 ? '#86efac' : diff > 0 ? '#fcd34d' : '#cbd5e1' }}>
+              우리 제품 대비 {diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
+            </div>
+            <div style={{ display: 'flex', gap: 5, marginTop: 8, flexWrap: 'wrap' }}>
+              {[30, 90, 120].map(days => (
+                <span key={days} style={{ fontSize: 10, color: '#cbd5e1', background: '#334155', borderRadius: 4, padding: '3px 5px' }}>
+                  {days}일 {Math.round(item.insurancePrice * days * copayRate).toLocaleString()}원
+                </span>
+              ))}
+            </div>
+          </div>
+        })}
+      </div>
+    </section>
   )
 }

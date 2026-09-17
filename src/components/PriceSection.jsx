@@ -82,7 +82,7 @@ function MiniPriceBar({ value, max, color }) {
   )
 }
 
-export default function PriceSection({ drug, copayRate, setCopayRate }) {
+export default function PriceSection({ drug, copayRate, setCopayRate, compareItems = [], onToggleCompare }) {
   const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice))
   const copayPct = Math.round(copayRate * 100)
   return (
@@ -144,6 +144,7 @@ export default function PriceSection({ drug, copayRate, setCopayRate }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: drug.lightColor }}>
+              <Th style={{ width: 48 }}>선택</Th>
               <Th>규격</Th>
               <Th>보험급여가</Th>
               <Th>환자 본인부담</Th>
@@ -159,6 +160,23 @@ export default function PriceSection({ drug, copayRate, setCopayRate }) {
                   borderBottom: '1px solid var(--border)',
                   transition: 'background 0.1s',
                 }}>
+                  <Td>
+                    <input
+                      type="checkbox"
+                      aria-label={`${drug.name} ${p.spec} 비교 선택`}
+                      checked={compareItems.some(item => item.compareKey === `own-${drug.id}-${p.spec}`)}
+                      onChange={() => onToggleCompare?.({
+                        compareKey: `own-${drug.id}-${p.spec}`,
+                        name: drug.name,
+                        manufacturer: drug.manufacturer,
+                        spec: p.spec,
+                        insurancePrice: p.insurancePrice,
+                        type: '우리 약물',
+                        color: drug.color,
+                      })}
+                      style={{ accentColor: drug.color, width: 16, height: 16, cursor: 'pointer' }}
+                    />
+                  </Td>
                   <Td>
                     <span style={{
                       display: 'inline-block',
