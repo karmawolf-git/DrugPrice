@@ -826,7 +826,9 @@ function GenericTable({ drug, copayRate, setCopayRate, compareItems, onToggleCom
 export default function CompetitorSection({ drug, allDrugs, copayRate = 0.3, setCopayRate, compareItems = [], onToggleCompare }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <CompetitorTable drug={drug} allDrugs={allDrugs} copayRate={copayRate} setCopayRate={setCopayRate} compareItems={compareItems} onToggleCompare={onToggleCompare} />
+      {drug.competitors.length > 0 && (
+        <CompetitorTable drug={drug} allDrugs={allDrugs} copayRate={copayRate} setCopayRate={setCopayRate} compareItems={compareItems} onToggleCompare={onToggleCompare} />
+      )}
       <GenericTable drug={drug} copayRate={copayRate} setCopayRate={setCopayRate} compareItems={compareItems} onToggleCompare={onToggleCompare} />
     </div>
   )

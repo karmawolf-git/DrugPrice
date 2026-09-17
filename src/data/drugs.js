@@ -1816,7 +1816,7 @@ export const drugs = [
     prices: [
       { spec: '200mg/2mL (100mg/mL)', insurancePrice: 0, unit: '바이알', reimbursementRate: '비급여', pricingStatus: '비급여' },
     ],
-    competitors: sugammadexGenerics,
+    competitors: [],
     generics: sugammadexGenerics.map(g => ({
       productName: g.name,
       name: g.name,
