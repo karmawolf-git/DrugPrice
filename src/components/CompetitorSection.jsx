@@ -861,11 +861,19 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
                   <td style={{ padding: '10px', color: diff < 0 ? '#86efac' : diff > 0 ? '#fcd34d' : '#cbd5e1', whiteSpace: 'nowrap' }}>
                     {diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
                   </td>
-                  {[30, 90, 120].map(days => (
-                    <td key={days} style={{ padding: '10px', color: '#e2e8f0', whiteSpace: 'nowrap' }}>
-                      {Math.round(item.insurancePrice * days * copayRate).toLocaleString()}원
-                    </td>
-                  ))}
+                  {[30, 90, 120].map(days => {
+                    const copay = Math.round(item.insurancePrice * days * copayRate)
+                    const referenceCopay = Math.round(referencePrice * days * copayRate)
+                    const copayDiff = copay - referenceCopay
+                    return (
+                      <td key={days} style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                        <div style={{ color: '#e2e8f0' }}>{copay.toLocaleString()}원</div>
+                        <div style={{ marginTop: 2, fontSize: 10, color: copayDiff < 0 ? '#86efac' : copayDiff > 0 ? '#fcd34d' : '#94a3b8' }}>
+                          {copayDiff === 0 ? '동일' : `${copayDiff > 0 ? '+' : ''}${copayDiff.toLocaleString()}원`}
+                        </div>
+                      </td>
+                    )
+                  })}
                 </tr>
               )
             })}
