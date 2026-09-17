@@ -8,7 +8,7 @@ function fmt(n) {
 const COPAY_RATES = [0.3, 0.4, 0.5]
 
 function PrescriptionCost({ insurancePrice, rate }) {
-  const days = [30, 90, 120]
+  const days = [30, 90, 120, 365]
   return (
     <div style={{ display: 'flex', gap: 5 }}>
       {days.map(d => {
