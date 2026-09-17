@@ -840,10 +840,10 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
         <button onClick={onClear} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>전체 해제</button>
       </div>
       <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
-        <table style={{ width: '100%', minWidth: 820, borderCollapse: 'collapse', fontSize: 12 }}>
+        <table style={{ width: '100%', minWidth: 920, borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-              {['구분', '제품명', '제조사', '규격', '보험급여가', '우리 제품 대비', '30일 본인부담', '90일 본인부담', '120일 본인부담'].map(label => (
+              {['구분', '제품명', '제조사', '규격', '보험급여가', '우리 제품 대비', '30일 본인부담', '90일 본인부담', '120일 본인부담', '1년 본인부담'].map(label => (
                 <th key={label} style={{ padding: '9px 10px', whiteSpace: 'nowrap', fontWeight: 600 }}>{label}</th>
               ))}
             </tr>
@@ -861,7 +861,7 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
                   <td style={{ padding: '10px', color: diff < 0 ? '#059669' : diff > 0 ? '#d97706' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
                   </td>
-                  {[30, 90, 120].map(days => {
+                  {[30, 90, 120, 365].map(days => {
                     const copay = Math.round(item.insurancePrice * days * copayRate)
                     const referenceCopay = Math.round(referencePrice * days * copayRate)
                     const copayDiff = copay - referenceCopay
