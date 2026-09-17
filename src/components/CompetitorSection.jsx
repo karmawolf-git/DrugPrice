@@ -839,27 +839,38 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
         <span style={{ fontSize: 12, color: '#cbd5e1' }}>{items.length}개 선택</span>
         <button onClick={onClear} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit' }}>전체 해제</button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
-        {items.map(item => {
-          const diff = item.insurancePrice - referencePrice
-          return <div key={item.compareKey} style={{ background: '#1e293b', borderRadius: 8, padding: '10px 12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 11, color: '#93c5fd' }}>{item.type}</span>
-              <strong style={{ fontSize: 14 }}>{fmt(item.insurancePrice)}</strong>
-            </div>
-            <div style={{ marginTop: 3, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
-            <div style={{ marginTop: 4, fontSize: 11, color: diff < 0 ? '#86efac' : diff > 0 ? '#fcd34d' : '#cbd5e1' }}>
-              우리 제품 대비 {diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
-            </div>
-            <div style={{ display: 'flex', gap: 5, marginTop: 8, flexWrap: 'wrap' }}>
-              {[30, 90, 120].map(days => (
-                <span key={days} style={{ fontSize: 10, color: '#cbd5e1', background: '#334155', borderRadius: 4, padding: '3px 5px' }}>
-                  {days}일 {Math.round(item.insurancePrice * days * copayRate).toLocaleString()}원
-                </span>
+      <div style={{ overflowX: 'auto', border: '1px solid #334155', borderRadius: 8 }}>
+        <table style={{ width: '100%', minWidth: 820, borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: '#1e293b', color: '#cbd5e1', textAlign: 'left' }}>
+              {['구분', '제품명', '제조사', '규격', '보험급여가', '우리 제품 대비', '30일 본인부담', '90일 본인부담', '120일 본인부담'].map(label => (
+                <th key={label} style={{ padding: '9px 10px', whiteSpace: 'nowrap', fontWeight: 600 }}>{label}</th>
               ))}
-            </div>
-          </div>
-        })}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(item => {
+              const diff = item.insurancePrice - referencePrice
+              return (
+                <tr key={item.compareKey} style={{ borderTop: '1px solid #334155' }}>
+                  <td style={{ padding: '10px', color: '#93c5fd', whiteSpace: 'nowrap' }}>{item.type}</td>
+                  <td style={{ padding: '10px', fontWeight: 700, maxWidth: 220 }}>{item.name}</td>
+                  <td style={{ padding: '10px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>{item.manufacturer ?? '-'}</td>
+                  <td style={{ padding: '10px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>{item.spec ?? item.specKey ?? '-'}</td>
+                  <td style={{ padding: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(item.insurancePrice)}</td>
+                  <td style={{ padding: '10px', color: diff < 0 ? '#86efac' : diff > 0 ? '#fcd34d' : '#cbd5e1', whiteSpace: 'nowrap' }}>
+                    {diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
+                  </td>
+                  {[30, 90, 120].map(days => (
+                    <td key={days} style={{ padding: '10px', color: '#e2e8f0', whiteSpace: 'nowrap' }}>
+                      {Math.round(item.insurancePrice * days * copayRate).toLocaleString()}원
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </section>
   )
