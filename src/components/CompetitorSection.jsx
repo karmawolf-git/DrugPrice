@@ -833,16 +833,16 @@ export default function CompetitorSection({ drug, allDrugs, copayRate = 0.3, set
 export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear }) {
   if (!items.length) return null
   return (
-    <section style={{ background: '#0f172a', color: '#fff', borderRadius: 'var(--radius)', padding: '16px 20px', boxShadow: 'var(--shadow-lg)' }}>
+    <section style={{ background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px', boxShadow: 'var(--shadow-sm)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <span style={{ fontWeight: 800 }}>⚖️ 선택 항목 비교</span>
-        <span style={{ fontSize: 12, color: '#cbd5e1' }}>{items.length}개 선택</span>
-        <button onClick={onClear} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit' }}>전체 해제</button>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{items.length}개 선택</span>
+        <button onClick={onClear} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>전체 해제</button>
       </div>
-      <div style={{ overflowX: 'auto', border: '1px solid #334155', borderRadius: 8 }}>
+      <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
         <table style={{ width: '100%', minWidth: 820, borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
-            <tr style={{ background: '#1e293b', color: '#cbd5e1', textAlign: 'left' }}>
+            <tr style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', textAlign: 'left' }}>
               {['구분', '제품명', '제조사', '규격', '보험급여가', '우리 제품 대비', '30일 본인부담', '90일 본인부담', '120일 본인부담'].map(label => (
                 <th key={label} style={{ padding: '9px 10px', whiteSpace: 'nowrap', fontWeight: 600 }}>{label}</th>
               ))}
@@ -852,13 +852,13 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
             {items.map(item => {
               const diff = item.insurancePrice - referencePrice
               return (
-                <tr key={item.compareKey} style={{ borderTop: '1px solid #334155' }}>
-                  <td style={{ padding: '10px', color: '#93c5fd', whiteSpace: 'nowrap' }}>{item.type}</td>
+                <tr key={item.compareKey} style={{ borderTop: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.type}</td>
                   <td style={{ padding: '10px', fontWeight: 700, maxWidth: 220 }}>{item.name}</td>
-                  <td style={{ padding: '10px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>{item.manufacturer ?? '-'}</td>
-                  <td style={{ padding: '10px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>{item.spec ?? item.specKey ?? '-'}</td>
+                  <td style={{ padding: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.manufacturer ?? '-'}</td>
+                  <td style={{ padding: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.spec ?? item.specKey ?? '-'}</td>
                   <td style={{ padding: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(item.insurancePrice)}</td>
-                  <td style={{ padding: '10px', color: diff < 0 ? '#86efac' : diff > 0 ? '#fcd34d' : '#cbd5e1', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '10px', color: diff < 0 ? '#059669' : diff > 0 ? '#d97706' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
                   </td>
                   {[30, 90, 120].map(days => {
@@ -867,8 +867,8 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
                     const copayDiff = copay - referenceCopay
                     return (
                       <td key={days} style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
-                        <div style={{ color: '#e2e8f0' }}>{copay.toLocaleString()}원</div>
-                        <div style={{ marginTop: 2, fontSize: 10, color: copayDiff < 0 ? '#86efac' : copayDiff > 0 ? '#fcd34d' : '#94a3b8' }}>
+                        <div style={{ color: 'var(--text-primary)' }}>{copay.toLocaleString()}원</div>
+                        <div style={{ marginTop: 2, fontSize: 10, color: copayDiff < 0 ? '#059669' : copayDiff > 0 ? '#d97706' : 'var(--text-muted)' }}>
                           {copayDiff === 0 ? '동일' : `${copayDiff > 0 ? '+' : ''}${copayDiff.toLocaleString()}원`}
                         </div>
                       </td>
