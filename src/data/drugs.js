@@ -1,3 +1,12 @@
+const sugammadexGenerics = [
+  { name: '산도스슈가마덱스나트륨주', manufacturer: '한국산도스(주)', ingredient: 'Sugammadex Sodium', spec: '200mg/2mL', insurancePrice: 0, pricingStatus: '비급여', class: '신경근 차단 역전제' },
+  { name: '건일슈가마덱스나트륨주', manufacturer: '건일제약(주)', ingredient: 'Sugammadex Sodium', spec: '200mg/2mL', insurancePrice: 0, pricingStatus: '비급여', class: '신경근 차단 역전제' },
+  { name: '뉴로디온주', manufacturer: '확인 필요', ingredient: 'Sugammadex Sodium', spec: '200mg/2mL', insurancePrice: 0, pricingStatus: '비급여', class: '신경근 차단 역전제' },
+  { name: '대한슈가마덱스나트륨주', manufacturer: '대한약품공업(주)', ingredient: 'Sugammadex Sodium', spec: '200mg/2mL', insurancePrice: 0, pricingStatus: '비급여', class: '신경근 차단 역전제' },
+  { name: '디뉴덱스주', manufacturer: '확인 필요', ingredient: 'Sugammadex Sodium', spec: '200mg/2mL', insurancePrice: 0, pricingStatus: '비급여', class: '신경근 차단 역전제' },
+  { name: '비씨슈가주', manufacturer: '비씨월드제약(주)', ingredient: 'Sugammadex Sodium', spec: '200mg/2mL', insurancePrice: 0, pricingStatus: '비급여', class: '신경근 차단 역전제' },
+]
+
 export const drugs = [
   {
     id: 'lipitor',
@@ -1784,6 +1793,39 @@ export const drugs = [
       { productName: '뉴펙스듀오정5mg/20mg',    specKey: '5/20mg',  manufacturer: '한국유나이티드제약(주)', insurancePrice: 903 },
       { productName: '로바토정5mg/20mg',        specKey: '5/20mg',  manufacturer: '위더스제약(주)',        insurancePrice: 905 },
     ],
+  },
+  {
+    id: 'bridion',
+    name: '브리디온',
+    englishName: 'Bridion Inj.',
+    color: '#7c3aed',
+    lightColor: '#ede9fe',
+    manufacturer: '한국엠에스디(유)',
+    ingredient: '슈가마덱스나트륨',
+    ingredientEn: 'Sugammadex Sodium',
+    type: '전문의약품',
+    form: '주사제',
+    atcCode: 'V03AB35',
+    approvalDate: '2012-10-16',
+    classification: '신경근 차단 역전제',
+    reimbursementCode: '655501751',
+    reimbursementCriteria: [],
+    indications: ['로쿠로늄 또는 베쿠로늄에 의해 유도된 신경근 차단의 역전'],
+    dosage: ['성인: 신경근 차단의 정도와 임상적 필요에 따라 2~4mg/kg을 정맥 투여합니다.'],
+    cautions: ['정맥 주사 전용이며, 과민반응 및 서맥 발생 여부를 관찰해야 합니다.', '중증 신장애 환자에서는 사용을 권장하지 않습니다.'],
+    prices: [
+      { spec: '200mg/2mL (100mg/mL)', insurancePrice: 0, unit: '바이알', reimbursementRate: '비급여', pricingStatus: '비급여' },
+    ],
+    competitors: sugammadexGenerics,
+    generics: sugammadexGenerics.map(g => ({
+      productName: g.name,
+      name: g.name,
+      specKey: g.spec,
+      manufacturer: g.manufacturer,
+      insurancePrice: g.insurancePrice,
+      pricingStatus: g.pricingStatus,
+      approvalDate: '-',
+    })),
   },
 ]
 

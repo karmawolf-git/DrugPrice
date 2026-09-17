@@ -3,8 +3,8 @@ import allGenerics from '../data/allGenerics.js'
 
 const GENERIC_DEFAULT_LIMIT = 10
 
-function fmt(n) {
-  return n.toLocaleString('ko-KR') + '원'
+function fmt(n, pricingStatus) {
+  return pricingStatus === '비급여' ? '비급여' : n.toLocaleString('ko-KR') + '원'
 }
 
 function PriceBar({ value, max, color }) {
@@ -57,7 +57,7 @@ function CopayToggle({ copayRate, setCopayRate, color = '#0f766e' }) {
   )
 }
 
-function PrescriptionCost({ insurancePrice, rate }) {
+function PrescriptionCost({ insurancePrice, rate, pricingStatus }) {
   const days = [30, 90, 120, 365]
   return (
     <div style={{ display: 'flex', gap: 5 }}>
@@ -71,8 +71,8 @@ function PrescriptionCost({ insurancePrice, rate }) {
             borderRadius: 5, border: '1px solid var(--border)', minWidth: 76,
           }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)' }}>{d}일 처방</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(total)}</span>
-            <span style={{ fontSize: 10, color: '#059669' }}>본인부담 {fmt(copay)}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>{fmt(total, pricingStatus)}</span>
+            <span style={{ fontSize: 10, color: '#059669' }}>본인부담 {fmt(copay, pricingStatus)}</span>
           </div>
         )
       })}
@@ -355,7 +355,7 @@ function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate, compareItems
             <span>📌</span>
             <span>
               비교 기준: <strong>{drug.name} {drug.prices[0]?.spec}</strong>{' '}
-              보험급여가 <strong>{fmt(refPrice)}</strong> (최저 규격)
+              보험급여가 <strong>{fmt(refPrice, drug.prices[0]?.pricingStatus)}</strong> (최저 규격)
             </span>
           </>
         )}
@@ -385,9 +385,9 @@ function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate, compareItems
               const displayName = c.name ?? c.productName
               const displayIngredient = c.ingredient ?? c.specKey ?? '-'
               const displayClass = c.class ?? null
-              const diff = c.insurancePrice - refPrice
-              const diffPct = refPrice ? ((Math.abs(diff) / refPrice) * 100).toFixed(0) : 0
-              const isHigher = diff > 0
+              const diff = c.pricingStatus === '비급여' || drug.prices[0]?.pricingStatus === '비급여' ? null : c.insurancePrice - refPrice
+              const diffPct = diff != null && refPrice ? ((Math.abs(diff) / refPrice) * 100).toFixed(0) : 0
+              const isHigher = diff != null && diff > 0
               const isSame = diff === 0
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)' }}>
@@ -452,11 +452,13 @@ function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate, compareItems
                       fontSize: 15,
                       color: isHigher ? '#b45309' : isSame ? 'var(--text-secondary)' : '#0f766e',
                     }}>
-                      {fmt(c.insurancePrice)}
+                      {fmt(c.insurancePrice, c.pricingStatus)}
                     </span>
                   </Td>
                   <Td>
-                    {isSame ? (
+                    {diff == null ? (
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>비교 불가(비급여)</span>
+                    ) : isSame ? (
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>동일</span>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -478,7 +480,7 @@ function CompetitorTable({ drug, allDrugs, copayRate, setCopayRate, compareItems
                     )}
                   </Td>
                   <Td style={{ minWidth: 260 }}>
-                    <PrescriptionCost insurancePrice={c.insurancePrice} rate={copayRate} />
+                    <PrescriptionCost insurancePrice={c.insurancePrice} rate={copayRate} pricingStatus={c.pricingStatus} />
                   </Td>
                 </tr>
               )
@@ -709,7 +711,7 @@ function GenericTable({ drug, copayRate, setCopayRate, compareItems, onToggleCom
               const equivSpec = S_EQUIV[g.specKey]
               const refSpec = equivSpec ?? g.specKey
               const origPrice = refSpec ? priceBySpec[refSpec] : drug.prices[0]?.insurancePrice
-              const saving = origPrice != null ? origPrice - g.insurancePrice : null
+              const saving = origPrice != null && g.pricingStatus !== '비급여' ? origPrice - g.insurancePrice : null
               const savingPct = (origPrice && saving != null) ? Math.round(Math.abs(saving) / origPrice * 100) : null
 
               return (
@@ -745,7 +747,7 @@ function GenericTable({ drug, copayRate, setCopayRate, compareItems, onToggleCom
                   <Td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{g.approvalDate ?? '-'}</Td>
                   <Td>
                     <span style={{ fontWeight: 700, fontSize: 15, color: '#0f766e' }}>
-                      {fmt(g.insurancePrice)}
+                      {fmt(g.insurancePrice, g.pricingStatus)}
                     </span>
                   </Td>
                   <Td>
@@ -779,7 +781,7 @@ function GenericTable({ drug, copayRate, setCopayRate, compareItems, onToggleCom
                     )}
                   </Td>
                   <Td style={{ minWidth: 260 }}>
-                    <PrescriptionCost insurancePrice={g.insurancePrice} rate={copayRate} />
+                    <PrescriptionCost insurancePrice={g.insurancePrice} rate={copayRate} pricingStatus={g.pricingStatus} />
                   </Td>
                 </tr>
               )
@@ -850,16 +852,16 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
           </thead>
           <tbody>
             {items.map(item => {
-              const diff = item.insurancePrice - referencePrice
+              const diff = item.pricingStatus === '비급여' ? null : item.insurancePrice - referencePrice
               return (
                 <tr key={item.compareKey} style={{ borderTop: '1px solid var(--border)' }}>
                   <td style={{ padding: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.type}</td>
                   <td style={{ padding: '10px', fontWeight: 700, maxWidth: 220 }}>{item.name}</td>
                   <td style={{ padding: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.manufacturer ?? '-'}</td>
                   <td style={{ padding: '10px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{item.spec ?? item.specKey ?? '-'}</td>
-                  <td style={{ padding: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(item.insurancePrice)}</td>
+                  <td style={{ padding: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(item.insurancePrice, item.pricingStatus)}</td>
                   <td style={{ padding: '10px', color: diff < 0 ? '#059669' : diff > 0 ? '#d97706' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                    {diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
+                    {diff == null ? '비교 불가(비급여)' : diff === 0 ? '동일' : `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`}
                   </td>
                   {[30, 90, 120, 365].map(days => {
                     const copay = Math.round(item.insurancePrice * days * copayRate)
@@ -867,9 +869,9 @@ export function CompareTray({ items, referencePrice, copayRate = 0.3, onClear })
                     const copayDiff = copay - referenceCopay
                     return (
                       <td key={days} style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
-                        <div style={{ color: 'var(--text-primary)' }}>{copay.toLocaleString()}원</div>
+                        <div style={{ color: 'var(--text-primary)' }}>{item.pricingStatus === '비급여' ? '비급여' : `${copay.toLocaleString()}원`}</div>
                         <div style={{ marginTop: 2, fontSize: 10, color: copayDiff < 0 ? '#059669' : copayDiff > 0 ? '#d97706' : 'var(--text-muted)' }}>
-                          {copayDiff === 0 ? '동일' : `${copayDiff > 0 ? '+' : ''}${copayDiff.toLocaleString()}원`}
+                          {item.pricingStatus === '비급여' ? '비교 불가' : copayDiff === 0 ? '동일' : `${copayDiff > 0 ? '+' : ''}${copayDiff.toLocaleString()}원`}
                         </div>
                       </td>
                     )

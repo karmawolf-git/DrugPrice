@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 
-function fmt(n) {
-  return n.toLocaleString('ko-KR') + '원'
+function fmt(n, pricingStatus) {
+  return pricingStatus === '비급여' ? '비급여' : n.toLocaleString('ko-KR') + '원'
 }
 
 // 선택 가능한 본인부담률 (기본 30%)
 const COPAY_RATES = [0.3, 0.4, 0.5]
 
-function PrescriptionCost({ insurancePrice, rate }) {
+function PrescriptionCost({ insurancePrice, rate, pricingStatus }) {
   const days = [30, 90, 120, 365]
   return (
     <div style={{ display: 'flex', gap: 5 }}>
@@ -32,10 +32,10 @@ function PrescriptionCost({ insurancePrice, rate }) {
               letterSpacing: '0.02em',
             }}>{d}일 처방</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>
-              {fmt(total)}
+              {fmt(total, pricingStatus)}
             </span>
             <span style={{ fontSize: 10, color: '#059669' }}>
-              본인부담 {fmt(copay)}
+              본인부담 {fmt(copay, pricingStatus)}
             </span>
           </div>
         )
@@ -83,7 +83,7 @@ function MiniPriceBar({ value, max, color }) {
 }
 
 export default function PriceSection({ drug, copayRate, setCopayRate, compareItems = [], onToggleCompare }) {
-  const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice))
+  const maxPrice = Math.max(...drug.prices.map(p => p.insurancePrice), 1)
   const copayPct = Math.round(copayRate * 100)
   return (
     <div style={{
@@ -171,6 +171,7 @@ export default function PriceSection({ drug, copayRate, setCopayRate, compareIte
                         manufacturer: drug.manufacturer,
                         spec: p.spec,
                         insurancePrice: p.insurancePrice,
+                        pricingStatus: p.pricingStatus,
                         type: '우리 약물',
                         color: drug.color,
                       })}
@@ -191,15 +192,15 @@ export default function PriceSection({ drug, copayRate, setCopayRate, compareIte
                   <Td>
                     <div>
                       <span style={{ fontWeight: 700, color: drug.color, fontSize: 15 }}>
-                        {fmt(p.insurancePrice)}
+                        {fmt(p.insurancePrice, p.pricingStatus)}
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>/{p.unit}</span>
                     </div>
                     <MiniPriceBar value={p.insurancePrice} max={maxPrice} color={drug.color} />
                   </Td>
                   <Td>
-                    <span style={{ color: '#059669', fontWeight: 600 }}>{fmt(copay)}</span>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>({copayPct}%)</span>
+                    <span style={{ color: '#059669', fontWeight: 600 }}>{fmt(copay, p.pricingStatus)}</span>
+                    {p.pricingStatus !== '비급여' && <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>({copayPct}%)</span>}
                   </Td>
                   <Td>
                     <span style={{
@@ -209,10 +210,10 @@ export default function PriceSection({ drug, copayRate, setCopayRate, compareIte
                       borderRadius: 10,
                       fontSize: 12,
                       fontWeight: 600,
-                    }}>{100 - copayPct}%</span>
+                    }}>{p.pricingStatus === '비급여' ? '비급여' : `${100 - copayPct}%`}</span>
                   </Td>
                   <Td style={{ minWidth: 260 }}>
-                    <PrescriptionCost insurancePrice={p.insurancePrice} rate={copayRate} />
+                    <PrescriptionCost insurancePrice={p.insurancePrice} rate={copayRate} pricingStatus={p.pricingStatus} />
                   </Td>
                 </tr>
               )
